@@ -1,4 +1,4 @@
-# Поиск файлов на диске (Spring Boot + React + Elasticsearch)
+# Полнотекстовый поиск по файлам на диске (Spring Boot + React + Elasticsearch)
 
 [![Backend CI](https://github.com/Vadim0plus/file-search-elasticsearch/actions/workflows/backend.yml/badge.svg?branch=main)](https://github.com/Vadim0plus/file-search-elasticsearch/actions/workflows/backend.yml)
 [![Frontend CI](https://github.com/Vadim0plus/file-search-elasticsearch/actions/workflows/frontend.yml/badge.svg?branch=main)](https://github.com/Vadim0plus/file-search-elasticsearch/actions/workflows/frontend.yml)
