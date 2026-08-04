@@ -18,11 +18,19 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.fileindex.config.AuthProperties;
+import com.fileindex.config.SecurityConfig;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(SearchController.class)
+@Import(SecurityConfig.class)
+@EnableConfigurationProperties(AuthProperties.class)
+@WithMockUser
 class SearchControllerTest {
 
     @Autowired

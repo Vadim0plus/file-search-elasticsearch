@@ -1,41 +1,29 @@
+/* Dark is the app's only theme (no light variant, no toggle): most browsers report
+   prefers-color-scheme as "light" whenever the OS has no explicit dark-mode setting (there's
+   no reliable "no preference" signal in practice), so a conditional light override would win
+   for most visitors and defeat "dark by default" entirely. Keeping a single unconditional
+   palette is what actually guarantees dark for everyone. */
 :root {
-  --text: #2d2b32;
-  --text-muted: #6b6375;
-  --bg: #ffffff;
-  --bg-subtle: #f7f6f4;
-  --border: #e5e4e7;
-  --accent: #7c3aed;
-  --accent-bg: rgba(124, 58, 237, 0.1);
-  --danger: #dc2626;
-  --danger-bg: rgba(220, 38, 38, 0.1);
-  --ok: #16a34a;
-  --ok-bg: rgba(22, 163, 74, 0.1);
-  --mark-bg: #fde68a;
+  --text: #e5e4e7;
+  --text-muted: #9ca3af;
+  --bg: #16171d;
+  --bg-subtle: #1f2028;
+  --border: #2e303a;
+  --accent: #c084fc;
+  --accent-bg: rgba(192, 132, 252, 0.15);
+  --danger: #f87171;
+  --danger-bg: rgba(248, 113, 113, 0.15);
+  --ok: #4ade80;
+  --ok-bg: rgba(74, 222, 128, 0.15);
+  --mark-bg: #78350f;
 
   font: 16px/1.5 system-ui, 'Segoe UI', Roboto, sans-serif;
-  color-scheme: light dark;
+  color-scheme: dark;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #e5e4e7;
-    --text-muted: #9ca3af;
-    --bg: #16171d;
-    --bg-subtle: #1f2028;
-    --border: #2e303a;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --danger: #f87171;
-    --danger-bg: rgba(248, 113, 113, 0.15);
-    --ok: #4ade80;
-    --ok-bg: rgba(74, 222, 128, 0.15);
-    --mark-bg: #78350f;
-  }
 }
 
 * {

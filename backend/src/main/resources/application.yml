@@ -3,6 +3,10 @@ spring:
     name: backend
   elasticsearch:
     uris: ${SPRING_ELASTICSEARCH_URIS:http://localhost:9200}
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
 
 server:
   port: 8080
@@ -21,6 +25,9 @@ app:
       - .idea
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  auth:
+    username: ${APP_AUTH_USERNAME:admin}
+    password: ${APP_AUTH_PASSWORD:admin}
 
 management:
   endpoints:

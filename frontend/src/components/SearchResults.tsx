@@ -3,12 +3,14 @@ import { ResultItem } from './ResultItem'
 
 interface SearchResultsProps {
   results: SearchHit[]
+  total: number
   loading: boolean
   error: string | null
   hasQuery: boolean
+  onPreview: (id: string) => void
 }
 
-export function SearchResults({ results, loading, error, hasQuery }: SearchResultsProps) {
+export function SearchResults({ results, total, loading, error, hasQuery, onPreview }: SearchResultsProps) {
   if (error) {
     return (
       <div className="search-status search-status-error" role="alert">
@@ -26,10 +28,13 @@ export function SearchResults({ results, loading, error, hasQuery }: SearchResul
     return <div className="search-status">Ничего не найдено.</div>
   }
   return (
-    <ul className="search-results">
-      {results.map((hit) => (
-        <ResultItem key={hit.id} hit={hit} />
-      ))}
-    </ul>
+    <>
+      <p className="result-count">Найдено файлов: {total}</p>
+      <ul className="search-results">
+        {results.map((hit) => (
+          <ResultItem key={hit.id} hit={hit} onPreview={onPreview} />
+        ))}
+      </ul>
+    </>
   )
 }

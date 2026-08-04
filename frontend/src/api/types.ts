@@ -44,3 +44,18 @@ export interface IndexRoot {
 export interface ApiError {
   message: string
 }
+
+export interface FileDetail {
+  id: string
+  path: string
+  fileName: string
+  extension: string
+  contentType: string
+  sizeBytes: number
+  modifiedAt: string
+  author: string | null
+  title: string | null
+  documentCreatedAt: string | null
+  content: string
+  truncated: boolean
+}

@@ -78,4 +78,30 @@ describe('IndexManager', () => {
 
     expect(await screen.findByText('Путь не существует')).toBeInTheDocument()
   })
+
+  it('uploads a file into the chosen root', async () => {
+    let uploadCalled = false
+    server.use(
+      http.get('/api/roots', () => HttpResponse.json([{ ...scanningRoot, status: 'WATCHING' }])),
+      // request.formData() isn't reliable under jsdom's File polyfill in this test
+      // environment; the actual multipart parsing is exercised server-side by the
+      // backend's Testcontainers integration test instead. Here we just confirm the
+      // upload request reaches the right per-root endpoint.
+      http.post('/api/roots/r1/upload', () => {
+        uploadCalled = true
+        return new HttpResponse(null, { status: 202 })
+      })
+    )
+
+    const user = userEvent.setup()
+    render(<IndexManager />)
+
+    await screen.findByText('/data')
+
+    const file = new File(['hello'], 'note.txt', { type: 'text/plain' })
+    const input = screen.getByLabelText('Загрузить файл')
+    await user.upload(input, file)
+
+    await waitFor(() => expect(uploadCalled).toBe(true))
+  })
 })

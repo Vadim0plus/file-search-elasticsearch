@@ -8,7 +8,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 @Configuration
 @EnableAsync
-@EnableConfigurationProperties(IndexingProperties.class)
+@EnableConfigurationProperties({IndexingProperties.class, AuthProperties.class})
 public class AppConfig {
 
     @Bean

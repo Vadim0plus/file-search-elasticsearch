@@ -22,7 +22,8 @@ services:
       elasticsearch:
         condition: service_healthy
     volumes:
-      - ${INDEX_ROOT:-./sample-data}:/data:ro
+      # writable (not :ro): the in-app upload feature saves files directly into a tracked root
+      - ${INDEX_ROOT:-./sample-data}:/data
     ports:
       - "${BACKEND_PORT:-7007}:8080"
 

@@ -20,7 +20,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/roots")
@@ -68,6 +70,29 @@ public class IndexController {
         IndexRoot root = findOrThrow(id);
         fileIndexingService.scanRootAsync(root);
         return ResponseEntity.accepted().body(toDto(root));
+    }
+
+    @PostMapping("/{id}/upload")
+    public ResponseEntity<Void> upload(@PathVariable String id, @RequestParam("file") MultipartFile file) throws IOException {
+        IndexRoot root = findOrThrow(id);
+        String originalName = file.getOriginalFilename();
+        if (file.isEmpty() || originalName == null || originalName.isBlank()) {
+            throw new IllegalArgumentException("Файл не выбран");
+        }
+
+        // Path.of(...).getFileName() drops any leading path segments (e.g. "../../evil.txt" ->
+        // "evil.txt"); the startsWith check below is defense in depth on top of that.
+        String fileName = Path.of(originalName).getFileName().toString();
+        Path destination = root.getPath().resolve(fileName).normalize();
+        if (!destination.startsWith(root.getPath())) {
+            throw new IllegalArgumentException("Недопустимое имя файла");
+        }
+
+        // No explicit indexing call: the root's directory is already watched by
+        // FileWatchService, which picks up this new file the same way it would if it had
+        // been dropped there directly on disk.
+        file.transferTo(destination);
+        return ResponseEntity.accepted().build();
     }
 
     @DeleteMapping("/{id}")

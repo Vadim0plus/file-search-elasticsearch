@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import userEvent from '@testing-library/user-event'
+import { describe, expect, it, vi } from 'vitest'
 import type { SearchHit } from '../api/types'
 import { ResultItem } from './ResultItem'
 
@@ -22,7 +23,7 @@ const baseHit: SearchHit = {
 
 describe('ResultItem', () => {
   it('wraps matched fragments in <mark> and leaves the rest as plain text', () => {
-    render(<ResultItem hit={baseHit} />)
+    render(<ResultItem hit={baseHit} onPreview={vi.fn()} />)
 
     const mark = screen.getByText('match')
     expect(mark.tagName).toBe('MARK')
@@ -30,11 +31,21 @@ describe('ResultItem', () => {
   })
 
   it('links the download control at the hit-provided URL with the file name', () => {
-    render(<ResultItem hit={baseHit} />)
+    render(<ResultItem hit={baseHit} onPreview={vi.fn()} />)
 
     const link = screen.getByRole('link', { name: /скачать/i })
     expect(link).toHaveAttribute('href', '/api/files/abc123/download')
     expect(link).toHaveAttribute('download', 'report.txt')
+  })
+
+  it('calls onPreview with the hit id when the preview button is clicked', async () => {
+    const user = userEvent.setup()
+    const onPreview = vi.fn()
+    render(<ResultItem hit={baseHit} onPreview={onPreview} />)
+
+    await user.click(screen.getByRole('button', { name: /просмотр/i }))
+
+    expect(onPreview).toHaveBeenCalledWith('abc123')
   })
 
   it('renders file content that looks like HTML as inert text, never as markup', () => {
@@ -48,7 +59,7 @@ describe('ResultItem', () => {
       ],
     }
 
-    const { container } = render(<ResultItem hit={maliciousHit} />)
+    const { container } = render(<ResultItem hit={maliciousHit} onPreview={vi.fn()} />)
 
     expect(container.querySelector('script')).toBeNull()
     expect(screen.getByText(/<script>alert\(1\)<\/script>/)).toBeInTheDocument()

@@ -144,6 +144,9 @@ public class FileIndexingService {
             .modifiedAt(attrs.lastModifiedTime().toInstant())
             .indexedAt(Instant.now())
             .rootId(rootId)
+            .author(extracted.author())
+            .documentTitle(extracted.title())
+            .documentCreatedAt(extracted.createdDate())
             .build();
     }
 

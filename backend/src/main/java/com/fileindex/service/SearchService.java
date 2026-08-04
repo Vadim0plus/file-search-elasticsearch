@@ -28,7 +28,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class SearchService {
 
-    private static final String INDEX = "files";
+    private static final String INDEX = IndexedFileDocument.INDEX_NAME;
 
     // Control-character sentinels instead of the default <em>/</em>: real file content never
     // contains them, so splitting on them is unambiguous - and even if it somehow did, the

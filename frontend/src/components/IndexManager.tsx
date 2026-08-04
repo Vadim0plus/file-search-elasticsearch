@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from 'react'
-import { addRoot, reindexRoot, removeRoot } from '../api/client'
+import { addRoot, reindexRoot, removeRoot, uploadFile } from '../api/client'
 import type { IndexRootStatus } from '../api/types'
 import { useIndexStatus } from '../hooks/useIndexStatus'
 
@@ -15,6 +15,8 @@ export function IndexManager() {
   const [newPath, setNewPath] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const [uploadingRootId, setUploadingRootId] = useState<string | null>(null)
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
   const handleAdd = async (event: FormEvent) => {
     event.preventDefault()
@@ -45,6 +47,21 @@ export function IndexManager() {
     await refresh()
   }
 
+  const handleUpload = async (rootId: string, file: File) => {
+    setUploadingRootId(rootId)
+    setUploadError(null)
+    try {
+      await uploadFile(rootId, file)
+      // the uploaded file lands in a directory FileWatchService already watches, so the
+      // regular status poll will pick up the updated docCount once it's indexed
+      await refresh()
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Не удалось загрузить файл')
+    } finally {
+      setUploadingRootId(null)
+    }
+  }
+
   return (
     <div className="index-manager">
       <form className="add-root-form" onSubmit={handleAdd}>
@@ -62,6 +79,11 @@ export function IndexManager() {
       {formError && (
         <div className="form-error" role="alert">
           {formError}
+        </div>
+      )}
+      {uploadError && (
+        <div className="form-error" role="alert">
+          {uploadError}
         </div>
       )}
       {error && (
@@ -88,6 +110,21 @@ export function IndexManager() {
               <td>{root.status === 'SCANNING' ? `${root.processedFiles} / ${root.totalFiles}` : '—'}</td>
               <td>{root.docCount}</td>
               <td className="roots-actions">
+                <label className="upload-label">
+                  {uploadingRootId === root.id ? 'Загружается…' : 'Загрузить файл'}
+                  <input
+                    type="file"
+                    className="upload-input"
+                    disabled={uploadingRootId === root.id}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0]
+                      event.target.value = ''
+                      if (file) {
+                        void handleUpload(root.id, file)
+                      }
+                    }}
+                  />
+                </label>
                 <button type="button" onClick={() => handleReindex(root.id)}>
                   Переиндексировать
                 </button>

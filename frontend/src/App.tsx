@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import './App.css'
 import type { SearchFilters } from './api/types'
+import { FilePreviewModal } from './components/FilePreviewModal'
 import { Filters } from './components/Filters'
 import { IndexManager } from './components/IndexManager'
+import { LoginPage } from './components/LoginPage'
 import { Pagination } from './components/Pagination'
 import { SearchBar } from './components/SearchBar'
 import { SearchResults } from './components/SearchResults'
+import { useAuth } from './hooks/useAuth'
 import { useDebouncedValue } from './hooks/useDebouncedValue'
 import { useHealth } from './hooks/useHealth'
 import { useLiveSearch } from './hooks/useLiveSearch'
@@ -16,13 +19,17 @@ const DEBOUNCE_MS = 280
 
 type Tab = 'search' | 'index'
 
-function App() {
+// Only mounted once authenticated, so its useLiveSearch effect fires for the first time
+// post-login - if it lived in App directly, the hook would fire (and 401) on the very first
+// render while still logged out, and that stale error would never clear since nothing about
+// the query/filters/page changes once the user actually logs in.
+function AuthenticatedApp({ username, healthy, onLogout }: { username: string; healthy: boolean; onLogout: () => void }) {
   const [tab, setTab] = useState<Tab>('search')
   const [query, setQuery] = useState('')
   const [filters, setFilters] = useState<SearchFilters>(EMPTY_FILTERS)
   const [page, setPage] = useState(0)
+  const [previewFileId, setPreviewFileId] = useState<string | null>(null)
   const debouncedQuery = useDebouncedValue(query, DEBOUNCE_MS)
-  const healthy = useHealth()
 
   const { data, loading, error } = useLiveSearch(debouncedQuery, filters, page, PAGE_SIZE)
 
@@ -51,6 +58,10 @@ function App() {
         <span className={`health-badge ${healthy ? 'healthy' : 'unhealthy'}`}>
           {healthy ? 'Elasticsearch доступен' : 'Elasticsearch недоступен'}
         </span>
+        <span className="current-user">{username}</span>
+        <button type="button" className="logout-button" onClick={onLogout}>
+          Выйти
+        </button>
       </header>
 
       <main>
@@ -60,9 +71,11 @@ function App() {
             <Filters filters={filters} onChange={handleFiltersChange} />
             <SearchResults
               results={data?.results ?? []}
+              total={data?.total ?? 0}
               loading={loading}
               error={error}
               hasQuery={debouncedQuery.trim().length > 0}
+              onPreview={setPreviewFileId}
             />
             {data && <Pagination page={data.page} size={data.size} total={data.total} onPageChange={setPage} />}
           </section>
@@ -70,8 +83,24 @@ function App() {
           <IndexManager />
         )}
       </main>
+
+      {previewFileId && <FilePreviewModal fileId={previewFileId} onClose={() => setPreviewFileId(null)} />}
     </div>
   )
+}
+
+function App() {
+  const { username, loading: authLoading, logout } = useAuth()
+  const healthy = useHealth()
+
+  if (authLoading) {
+    return null
+  }
+  if (!username) {
+    return <LoginPage />
+  }
+
+  return <AuthenticatedApp username={username} healthy={healthy} onLogout={() => logout()} />
 }
 
 export default App

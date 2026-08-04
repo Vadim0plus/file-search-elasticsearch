@@ -1,4 +1,12 @@
 package com.fileindex.service;
 
-public record ExtractedContent(String text, String contentType) {
+import java.time.Instant;
+
+public record ExtractedContent(
+    String text,
+    String contentType,
+    String author,
+    String title,
+    Instant createdDate
+) {
 }
