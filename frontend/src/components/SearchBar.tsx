@@ -8,10 +8,10 @@ export function SearchBar({ value, onChange }: SearchBarProps) {
     <input
       type="search"
       className="search-bar"
-      placeholder="Search files by name or content..."
+      placeholder="Поиск файлов по имени или содержимому..."
       value={value}
       onChange={(event) => onChange(event.target.value)}
-      aria-label="Search files"
+      aria-label="Поиск файлов"
     />
   )
 }

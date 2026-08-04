@@ -24,7 +24,7 @@ describe('IndexManager', () => {
 
     expect(await screen.findByText('/data')).toBeInTheDocument()
     expect(screen.getByText('42 / 100')).toBeInTheDocument()
-    expect(screen.getByText('SCANNING')).toBeInTheDocument()
+    expect(screen.getByText('Сканирование')).toBeInTheDocument()
   })
 
   it('adds a new root through the API and shows it once the list refreshes', async () => {
@@ -56,10 +56,10 @@ describe('IndexManager', () => {
     const user = userEvent.setup()
     render(<IndexManager />)
 
-    await waitFor(() => expect(screen.getByText('No tracked directories yet.')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Пока нет отслеживаемых директорий.')).toBeInTheDocument())
 
-    await user.type(screen.getByLabelText('Root path'), '/new/path')
-    await user.click(screen.getByRole('button', { name: /add root/i }))
+    await user.type(screen.getByLabelText('Путь до директории'), '/new/path')
+    await user.click(screen.getByRole('button', { name: /добавить директорию/i }))
 
     expect(await screen.findByText('/new/path')).toBeInTheDocument()
   })
@@ -67,15 +67,15 @@ describe('IndexManager', () => {
   it('shows the server error message when adding a root fails', async () => {
     server.use(
       http.get('/api/roots', () => HttpResponse.json([])),
-      http.post('/api/roots', () => HttpResponse.json({ message: 'Path does not exist' }, { status: 400 }))
+      http.post('/api/roots', () => HttpResponse.json({ message: 'Путь не существует' }, { status: 400 }))
     )
 
     const user = userEvent.setup()
     render(<IndexManager />)
 
-    await user.type(screen.getByLabelText('Root path'), '/nope')
-    await user.click(screen.getByRole('button', { name: /add root/i }))
+    await user.type(screen.getByLabelText('Путь до директории'), '/nope')
+    await user.click(screen.getByRole('button', { name: /добавить директорию/i }))
 
-    expect(await screen.findByText('Path does not exist')).toBeInTheDocument()
+    expect(await screen.findByText('Путь не существует')).toBeInTheDocument()
   })
 })

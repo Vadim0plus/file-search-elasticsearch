@@ -133,6 +133,6 @@ CORS открыт для origin фронтенда. `spring-boot-starter-actuato
 - `./gradlew test` (backend, включая Testcontainers) и `npm test` (frontend) — зелёные.
 - `docker compose up --build`, дождаться healthy у `elasticsearch` и `backend`.
 - `curl -X POST localhost:7007/api/roots -H 'content-type: application/json' -d '{"path":"/data"}'` → статус `SCANNING → WATCHING`.
-- `curl 'localhost:7007/api/search?q=quarterly'` → результаты с подсветкой и `downloadUrl`; `curl -OJ localhost:7007/api/files/{id}/download` отдаёт файл.
+- `curl 'localhost:7007/api/search?q=Elasticsearch'` → результаты с подсветкой и `downloadUrl`; `curl -OJ localhost:7007/api/files/{id}/download` отдаёт файл.
 - Изменение/добавление файла в смонтированной директории → `GET /api/roots` показывает обновлённый `docCount` без ручной переиндексации.
 - Открыть `http://localhost:7006` — в UI: ввод в поиск обновляет результаты по мере набора текста, подсветка рендерится безопасно (без сырого HTML), ссылка «Скачать» работает, управление root'ами в реальном времени.

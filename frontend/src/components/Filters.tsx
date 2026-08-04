@@ -28,16 +28,16 @@ export function Filters({ filters, onChange }: FiltersProps) {
       <input
         type="text"
         className="filters-path"
-        placeholder="Path starts with..."
+        placeholder="Путь начинается с..."
         value={filters.path}
         onChange={(event) => onChange({ ...filters, path: event.target.value })}
       />
       <label className="filters-date">
-        From
+        С
         <input type="date" value={filters.from} onChange={(event) => onChange({ ...filters, from: event.target.value })} />
       </label>
       <label className="filters-date">
-        To
+        По
         <input type="date" value={filters.to} onChange={(event) => onChange({ ...filters, to: event.target.value })} />
       </label>
     </div>

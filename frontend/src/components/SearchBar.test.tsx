@@ -23,7 +23,7 @@ describe('SearchBar', () => {
     const onChangeSpy = vi.fn()
     render(<ControlledSearchBar onChangeSpy={onChangeSpy} />)
 
-    const input = screen.getByRole('searchbox', { name: /search files/i })
+    const input = screen.getByRole('searchbox', { name: /поиск файлов/i })
     await user.type(input, 'ab')
 
     expect(onChangeSpy).toHaveBeenNthCalledWith(1, 'a')

@@ -12,18 +12,18 @@ export function SearchResults({ results, loading, error, hasQuery }: SearchResul
   if (error) {
     return (
       <div className="search-status search-status-error" role="alert">
-        Error: {error}
+        Ошибка: {error}
       </div>
     )
   }
   if (loading && results.length === 0) {
-    return <div className="search-status">Searching...</div>
+    return <div className="search-status">Идёт поиск...</div>
   }
   if (!hasQuery) {
-    return <div className="search-status">Start typing to search indexed files.</div>
+    return <div className="search-status">Начните вводить текст для поиска по проиндексированным файлам.</div>
   }
   if (results.length === 0) {
-    return <div className="search-status">No results found.</div>
+    return <div className="search-status">Ничего не найдено.</div>
   }
   return (
     <ul className="search-results">

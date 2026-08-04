@@ -17,7 +17,7 @@ export function useIndexStatus() {
       setError(null)
       return result
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load roots')
+      setError(err instanceof Error ? err.message : 'Не удалось загрузить список директорий')
       return null
     }
   }, [])

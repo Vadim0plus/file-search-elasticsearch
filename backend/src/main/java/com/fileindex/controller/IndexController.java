@@ -35,10 +35,10 @@ public class IndexController {
     public ResponseEntity<IndexRootDto> addRoot(@Valid @RequestBody AddRootRequest request) {
         Path path = Path.of(request.path()).toAbsolutePath().normalize();
         if (!Files.isDirectory(path)) {
-            throw new IllegalArgumentException("Path does not exist or is not a directory: " + path);
+            throw new IllegalArgumentException("Путь не существует или не является директорией: " + path);
         }
         if (store.existsForPath(path)) {
-            throw new IllegalArgumentException("Path is already tracked: " + path);
+            throw new IllegalArgumentException("Путь уже отслеживается: " + path);
         }
 
         IndexRoot root = store.create(path);
@@ -46,7 +46,7 @@ public class IndexController {
             fileWatchService.watchRoot(root);
         } catch (IOException e) {
             store.remove(root.getId());
-            throw new IllegalArgumentException("Cannot watch path: " + path + " (" + e.getMessage() + ")");
+            throw new IllegalArgumentException("Не удалось начать отслеживание пути: " + path + " (" + e.getMessage() + ")");
         }
         fileIndexingService.scanRootAsync(root);
 
@@ -80,7 +80,7 @@ public class IndexController {
     }
 
     private IndexRoot findOrThrow(String id) {
-        return store.find(id).orElseThrow(() -> new NotFoundException("Root not found: " + id));
+        return store.find(id).orElseThrow(() -> new NotFoundException("Директория не найдена: " + id));
     }
 
     private IndexRootDto toDto(IndexRoot root) {

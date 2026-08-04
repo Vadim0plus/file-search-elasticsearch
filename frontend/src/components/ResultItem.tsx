@@ -6,9 +6,9 @@ interface ResultItemProps {
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) {
-    return `${bytes} B`
+    return `${bytes} Б`
   }
-  const units = ['KB', 'MB', 'GB']
+  const units = ['КБ', 'МБ', 'ГБ']
   let value = bytes / 1024
   let unitIndex = 0
   while (value >= 1024 && unitIndex < units.length - 1) {
@@ -26,7 +26,7 @@ export function ResultItem({ hit }: ResultItemProps) {
       <div className="result-header">
         <span className="result-filename">{hit.fileName}</span>
         <span className="result-meta">
-          {formatBytes(hit.sizeBytes)} · {new Date(hit.modifiedAt).toLocaleString()}
+          {formatBytes(hit.sizeBytes)} · {new Date(hit.modifiedAt).toLocaleString('ru-RU')}
         </span>
       </div>
       <div className="result-path">{hit.path}</div>
@@ -42,7 +42,7 @@ export function ResultItem({ hit }: ResultItemProps) {
         </p>
       ))}
       <a className="result-download" href={hit.downloadUrl} download={hit.fileName}>
-        Download
+        Скачать
       </a>
     </li>
   )

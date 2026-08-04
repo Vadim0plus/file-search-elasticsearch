@@ -14,13 +14,13 @@ export function Pagination({ page, size, total, onPageChange }: PaginationProps)
   return (
     <div className="pagination">
       <button type="button" disabled={page === 0} onClick={() => onPageChange(page - 1)}>
-        Previous
+        Назад
       </button>
       <span>
-        Page {page + 1} of {totalPages}
+        Страница {page + 1} из {totalPages}
       </span>
       <button type="button" disabled={page + 1 >= totalPages} onClick={() => onPageChange(page + 1)}>
-        Next
+        Вперёд
       </button>
     </div>
   )

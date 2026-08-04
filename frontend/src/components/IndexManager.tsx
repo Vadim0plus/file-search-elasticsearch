@@ -1,6 +1,14 @@
 import { type FormEvent, useState } from 'react'
 import { addRoot, reindexRoot, removeRoot } from '../api/client'
+import type { IndexRootStatus } from '../api/types'
 import { useIndexStatus } from '../hooks/useIndexStatus'
+
+const STATUS_LABELS: Record<IndexRootStatus, string> = {
+  IDLE: 'Ожидание',
+  SCANNING: 'Сканирование',
+  WATCHING: 'Отслеживание',
+  ERROR: 'Ошибка',
+}
 
 export function IndexManager() {
   const { roots, error, refresh } = useIndexStatus()
@@ -21,7 +29,7 @@ export function IndexManager() {
       setNewPath('')
       await refresh()
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Failed to add root')
+      setFormError(err instanceof Error ? err.message : 'Не удалось добавить директорию')
     } finally {
       setSubmitting(false)
     }
@@ -42,13 +50,13 @@ export function IndexManager() {
       <form className="add-root-form" onSubmit={handleAdd}>
         <input
           type="text"
-          placeholder="/data/my-folder (path inside the backend container)"
+          placeholder="/data/my-folder (путь внутри контейнера backend)"
           value={newPath}
           onChange={(event) => setNewPath(event.target.value)}
-          aria-label="Root path"
+          aria-label="Путь до директории"
         />
         <button type="submit" disabled={submitting}>
-          Add root
+          Добавить директорию
         </button>
       </form>
       {formError && (
@@ -65,10 +73,10 @@ export function IndexManager() {
       <table className="roots-table">
         <thead>
           <tr>
-            <th>Path</th>
-            <th>Status</th>
-            <th>Progress</th>
-            <th>Docs</th>
+            <th>Путь</th>
+            <th>Статус</th>
+            <th>Прогресс</th>
+            <th>Документов</th>
             <th />
           </tr>
         </thead>
@@ -76,22 +84,22 @@ export function IndexManager() {
           {roots.map((root) => (
             <tr key={root.id}>
               <td>{root.path}</td>
-              <td>{root.status}</td>
+              <td>{STATUS_LABELS[root.status]}</td>
               <td>{root.status === 'SCANNING' ? `${root.processedFiles} / ${root.totalFiles}` : '—'}</td>
               <td>{root.docCount}</td>
               <td className="roots-actions">
                 <button type="button" onClick={() => handleReindex(root.id)}>
-                  Reindex
+                  Переиндексировать
                 </button>
                 <button type="button" onClick={() => handleRemove(root.id)}>
-                  Remove
+                  Удалить
                 </button>
               </td>
             </tr>
           ))}
           {roots.length === 0 && (
             <tr>
-              <td colSpan={5}>No tracked directories yet.</td>
+              <td colSpan={5}>Пока нет отслеживаемых директорий.</td>
             </tr>
           )}
         </tbody>

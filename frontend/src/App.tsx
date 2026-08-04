@@ -39,17 +39,17 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>File Search</h1>
+        <h1>Поиск файлов</h1>
         <nav className="tabs">
           <button type="button" className={tab === 'search' ? 'active' : ''} onClick={() => setTab('search')}>
-            Search
+            Поиск
           </button>
           <button type="button" className={tab === 'index' ? 'active' : ''} onClick={() => setTab('index')}>
-            Index Manager
+            Управление индексом
           </button>
         </nav>
         <span className={`health-badge ${healthy ? 'healthy' : 'unhealthy'}`}>
-          {healthy ? 'Elasticsearch OK' : 'Elasticsearch unavailable'}
+          {healthy ? 'Elasticsearch доступен' : 'Elasticsearch недоступен'}
         </span>
       </header>
 

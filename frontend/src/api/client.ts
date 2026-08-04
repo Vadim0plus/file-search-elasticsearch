@@ -4,7 +4,7 @@ const BASE_URL = '/api'
 
 async function parseJsonOrThrow<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    let message = `Request failed with status ${response.status}`
+    let message = `Запрос завершился с ошибкой (статус ${response.status})`
     try {
       const body = (await response.json()) as ApiError
       if (body.message) {
@@ -70,6 +70,6 @@ export async function reindexRoot(id: string): Promise<IndexRoot> {
 export async function removeRoot(id: string): Promise<void> {
   const response = await fetch(`${BASE_URL}/roots/${id}`, { method: 'DELETE' })
   if (!response.ok) {
-    throw new Error(`Failed to remove root (status ${response.status})`)
+    throw new Error(`Не удалось удалить директорию (статус ${response.status})`)
   }
 }

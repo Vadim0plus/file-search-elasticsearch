@@ -1,5 +1,5 @@
-sku,name,quantity,warehouse
-A-1001,Steel Bracket,420,Warehouse North
-A-1002,Aluminum Panel,150,Warehouse North
-B-2001,Search Server Rack Unit,12,Warehouse South
-B-2002,Elasticsearch Appliance,4,Warehouse South
+артикул,наименование,количество,склад
+A-1001,Стальной кронштейн,420,Склад Север
+A-1002,Алюминиевая панель,150,Склад Север
+B-2001,Стойка сервера поиска,12,Склад Юг
+B-2002,Модуль Elasticsearch,4,Склад Юг

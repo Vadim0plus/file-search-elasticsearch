@@ -35,11 +35,11 @@ public class FileDownloadController {
     @GetMapping("/{id}/download")
     public ResponseEntity<Resource> download(@PathVariable String id) throws IOException {
         IndexedFileDocument doc = repository.findById(id)
-            .orElseThrow(() -> new NotFoundException("File not found: " + id));
+            .orElseThrow(() -> new NotFoundException("Файл не найден: " + id));
 
         Path path = Path.of(doc.getPath());
         if (!Files.isRegularFile(path)) {
-            throw new NotFoundException("File no longer exists on disk: " + doc.getPath());
+            throw new NotFoundException("Файл больше не существует на диске: " + doc.getPath());
         }
 
         Resource resource = new FileSystemResource(path);

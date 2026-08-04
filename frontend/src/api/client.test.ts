@@ -30,14 +30,14 @@ describe('api client', () => {
   })
 
   it('surfaces the server-provided error message on a failed request', async () => {
-    server.use(http.post('/api/roots', () => HttpResponse.json({ message: 'Path is already tracked' }, { status: 400 })))
+    server.use(http.post('/api/roots', () => HttpResponse.json({ message: 'Путь уже отслеживается' }, { status: 400 })))
 
-    await expect(addRoot('/data')).rejects.toThrow('Path is already tracked')
+    await expect(addRoot('/data')).rejects.toThrow('Путь уже отслеживается')
   })
 
   it('falls back to a generic message when the error body is not JSON', async () => {
     server.use(http.post('/api/roots', () => new HttpResponse('oops', { status: 500 })))
 
-    await expect(addRoot('/data')).rejects.toThrow('Request failed with status 500')
+    await expect(addRoot('/data')).rejects.toThrow('статус 500')
   })
 })

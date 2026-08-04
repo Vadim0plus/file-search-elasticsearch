@@ -1,10 +1,11 @@
-Q3 Financial Summary
+Финансовый отчёт за 3 квартал
 
-Revenue grew 12% quarter over quarter, driven by strong performance in the
-enterprise search segment. Operating margin improved to 18%, and the team
-shipped the new full-text search indexing pipeline ahead of schedule.
+Выручка выросла на 12% по сравнению с предыдущим кварталом благодаря
+сильным показателям в сегменте корпоративного поиска. Операционная маржа
+выросла до 18%, а команда досрочно выпустила новый конвейер полнотекстовой
+индексации.
 
-Key highlights:
-- Elasticsearch cluster migrated to the latest major version with zero downtime.
-- Average query latency dropped from 340ms to 45ms after the reindex.
-- Customer support tickets related to search relevance fell by 60%.
+Основные моменты:
+- Кластер Elasticsearch мигрирован на последнюю мажорную версию без простоя.
+- Средняя задержка запроса снизилась с 340 мс до 45 мс после переиндексации.
+- Число обращений в поддержку по вопросам релевантности поиска упало на 60%.

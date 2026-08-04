@@ -25,7 +25,7 @@ public class GlobalExceptionHandler {
         String message = e.getBindingResult().getFieldErrors().stream()
             .findFirst()
             .map(f -> f.getField() + " " + f.getDefaultMessage())
-            .orElse("Validation failed");
+            .orElse("Ошибка валидации");
         return ResponseEntity.badRequest().body(new ErrorResponseDto(message));
     }
 }

@@ -46,7 +46,7 @@ export function useLiveSearch(
         if (err instanceof DOMException && err.name === 'AbortError') {
           return
         }
-        setError(err instanceof Error ? err.message : 'Search failed')
+        setError(err instanceof Error ? err.message : 'Ошибка поиска')
         setLoading(false)
       })
 

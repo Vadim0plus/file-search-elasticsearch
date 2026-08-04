@@ -32,7 +32,7 @@ describe('ResultItem', () => {
   it('links the download control at the hit-provided URL with the file name', () => {
     render(<ResultItem hit={baseHit} />)
 
-    const link = screen.getByRole('link', { name: /download/i })
+    const link = screen.getByRole('link', { name: /скачать/i })
     expect(link).toHaveAttribute('href', '/api/files/abc123/download')
     expect(link).toHaveAttribute('download', 'report.txt')
   })
