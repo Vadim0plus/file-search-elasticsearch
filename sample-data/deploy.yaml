@@ -1,0 +1,32 @@
+# Пример конфигурации развёртывания сервиса поиска файлов
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: file-search-backend
+  labels:
+    app: file-search
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: file-search
+  template:
+    metadata:
+      labels:
+        app: file-search
+    spec:
+      containers:
+        - name: backend
+          image: file-search-backend:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_ELASTICSEARCH_URIS
+              value: http://elasticsearch:9200
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1"

@@ -12,6 +12,7 @@ public class IndexingProperties {
     private int batchSize = 200;
     private long watchDebounceMs = 500;
     private List<String> excludedDirs = List.of(".git", "node_modules", "target", "build", "dist", ".idea");
+    private String defaultRoot;
 
     public long maxFileSizeBytes() {
         return maxFileSizeMb * 1024 * 1024;

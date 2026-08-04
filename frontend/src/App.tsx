@@ -14,7 +14,10 @@ import { useHealth } from './hooks/useHealth'
 import { useLiveSearch } from './hooks/useLiveSearch'
 
 const EMPTY_FILTERS: SearchFilters = { extensions: [], path: '', from: '', to: '' }
-const PAGE_SIZE = 20
+const SEARCH_PAGE_SIZE = 20
+// Landing on the page with no query yet is "browsing", not searching - a shorter page keeps
+// the first thing a new user sees to a quick top-10 glance rather than a full paginated list.
+const BROWSE_PAGE_SIZE = 10
 const DEBOUNCE_MS = 280
 
 type Tab = 'search' | 'index'
@@ -30,8 +33,10 @@ function AuthenticatedApp({ username, healthy, onLogout }: { username: string; h
   const [page, setPage] = useState(0)
   const [previewFileId, setPreviewFileId] = useState<string | null>(null)
   const debouncedQuery = useDebouncedValue(query, DEBOUNCE_MS)
+  const hasQuery = debouncedQuery.trim().length > 0
+  const pageSize = hasQuery ? SEARCH_PAGE_SIZE : BROWSE_PAGE_SIZE
 
-  const { data, loading, error } = useLiveSearch(debouncedQuery, filters, page, PAGE_SIZE)
+  const { data, loading, error } = useLiveSearch(debouncedQuery, filters, page, pageSize)
 
   const handleQueryChange = (value: string) => {
     setQuery(value)
@@ -77,7 +82,7 @@ function AuthenticatedApp({ username, healthy, onLogout }: { username: string; h
               total={data?.total ?? 0}
               loading={loading}
               error={error}
-              hasQuery={debouncedQuery.trim().length > 0}
+              hasQuery={hasQuery}
               onPreview={setPreviewFileId}
             />
             {data && <Pagination page={data.page} size={data.size} total={data.total} onPageChange={setPage} />}

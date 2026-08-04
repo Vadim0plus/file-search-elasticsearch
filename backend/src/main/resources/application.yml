@@ -28,6 +28,10 @@ app:
       - build
       - dist
       - .idea
+    # Auto-registered as an index root on startup if it exists, so a fresh checkout has
+    # browsable results without a manual "add root" step. Blank disables this (e.g. bare
+    # `./gradlew bootRun` outside Docker, where /data isn't mounted).
+    default-root: ${APP_INDEXING_DEFAULT_ROOT:}
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
   auth:

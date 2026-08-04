@@ -1,0 +1,17 @@
+{
+  "service": "file-search-elasticsearch",
+  "environment": "demo",
+  "indexing": {
+    "batchSize": 200,
+    "maxFileSizeMb": 50,
+    "watchDebounceMs": 500,
+    "excludedDirs": [".git", "node_modules", "target", "build", "dist", ".idea"]
+  },
+  "elasticsearch": {
+    "uri": "http://elasticsearch:9200",
+    "index": "indexed-files"
+  },
+  "roots": [
+    { "path": "/data", "description": "Демонстрационные файлы для docker compose up" }
+  ]
+}

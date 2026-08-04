@@ -1,0 +1,9 @@
+2026-07-28 09:12:03 INFO  DefaultIndexRootInitializer - Registered default index root /data
+2026-07-28 09:12:03 INFO  FileIndexingService - Начато сканирование корня /data
+2026-07-28 09:12:04 INFO  FileIndexingService - Найдено 12 файлов для индексации
+2026-07-28 09:12:05 INFO  TextExtractionService - Извлечён текст из agreement.docx (1204 символа)
+2026-07-28 09:12:05 INFO  TextExtractionService - Извлечён текст из report.pdf (2871 символ)
+2026-07-28 09:12:05 WARN  TextExtractionService - Не удалось извлечь текст из logo.svg: пустое содержимое
+2026-07-28 09:12:06 INFO  FileIndexingService - Индексация корня /data завершена, статус WATCHING
+2026-07-28 09:14:31 INFO  FileWatchService - Обнаружено изменение файла: config.json
+2026-07-28 09:14:31 INFO  FileIndexingService - Файл config.json переиндексирован

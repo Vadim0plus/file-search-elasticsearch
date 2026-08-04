@@ -6,6 +6,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.IndexOperations;
 import org.springframework.stereotype.Component;
@@ -18,6 +19,9 @@ import org.springframework.stereotype.Component;
  * "rootId" as text+keyword multi-fields instead of plain keyword - breaking the prefix/terms
  * filters that assume those are top-level keyword fields.
  */
+// Ordered ahead of DefaultIndexRootInitializer: that runner's scan must never race the mapping
+// creation below, or the index would get auto-created with dynamic (wrong) mapping first.
+@Order(1)
 @Component
 @RequiredArgsConstructor
 public class ElasticsearchIndexInitializer implements ApplicationRunner {

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<searchResponse>
+  <query>Elasticsearch</query>
+  <total>3</total>
+  <hits>
+    <hit>
+      <fileName>quarterly-report.txt</fileName>
+      <extension>txt</extension>
+      <score>4.82</score>
+    </hit>
+    <hit>
+      <fileName>meeting-notes.md</fileName>
+      <extension>md</extension>
+      <score>3.91</score>
+    </hit>
+    <hit>
+      <fileName>architecture.html</fileName>
+      <extension>html</extension>
+      <score>2.14</score>
+    </hit>
+  </hits>
+</searchResponse>
