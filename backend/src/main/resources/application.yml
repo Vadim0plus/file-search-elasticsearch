@@ -10,6 +10,11 @@ spring:
 
 server:
   port: 8080
+  # Trust X-Forwarded-* headers from the nginx frontend proxy - without this, springdoc infers
+  # the OpenAPI "servers" base URL from the request as Tomcat sees it (the backend container's
+  # own address), so Swagger UI's "Try it out" would call an address unreachable from outside
+  # the Docker network instead of the URL the browser actually used.
+  forward-headers-strategy: framework
 
 app:
   indexing:

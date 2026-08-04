@@ -62,6 +62,17 @@
   background: var(--danger-bg);
 }
 
+.api-docs-link {
+  font-size: 13px;
+  color: var(--accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.api-docs-link:hover {
+  text-decoration: underline;
+}
+
 .current-user {
   font-size: 13px;
   color: var(--text-muted);

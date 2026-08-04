@@ -1,0 +1,371 @@
+openapi: 3.1.0
+info:
+  title: File Search API
+  description: Индексация файлов на диске и полнотекстовый поиск (Spring Boot + Elasticsearch).
+  version: v1
+servers:
+- url: http://localhost:7007
+  description: Generated server url
+paths:
+  /api/roots:
+    get:
+      tags:
+      - index-controller
+      operationId: listRoots
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IndexRootDto"
+    post:
+      tags:
+      - index-controller
+      operationId: addRoot
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddRootRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/IndexRootDto"
+  /api/roots/{id}/upload:
+    post:
+      tags:
+      - index-controller
+      operationId: upload
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+      responses:
+        "200":
+          description: OK
+  /api/roots/{id}/reindex:
+    post:
+      tags:
+      - index-controller
+      operationId: reindex
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/IndexRootDto"
+  /api/search:
+    get:
+      tags:
+      - search-controller
+      operationId: search
+      parameters:
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: extension
+        in: query
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: path
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SearchResponseDto"
+  /api/roots/{id}:
+    get:
+      tags:
+      - index-controller
+      operationId: getRoot
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/IndexRootDto"
+    delete:
+      tags:
+      - index-controller
+      operationId: removeRoot
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+  /api/files/{id}:
+    get:
+      tags:
+      - file-controller
+      operationId: detail
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/FileDetailDto"
+  /api/files/{id}/preview:
+    get:
+      tags:
+      - file-controller
+      operationId: preview
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+  /api/files/{id}/download:
+    get:
+      tags:
+      - file-controller
+      operationId: download
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+  /api/auth/me:
+    get:
+      tags:
+      - auth-controller
+      operationId: me
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+  /api/auth/login:
+    post:
+      summary: Войти
+      description: "Обрабатывается Spring Security (form-urlencoded username/password),\
+        \ не обычный @Controller-метод."
+      responses:
+        "200":
+          description: "Успешный вход, установлена сессионная кука"
+        "401":
+          description: Неверный логин или пароль
+  /api/auth/logout:
+    post:
+      summary: Выйти
+      description: Обрабатывается Spring Security.
+      responses:
+        "200":
+          description: Успешный выход
+components:
+  schemas:
+    AddRootRequest:
+      type: object
+      properties:
+        path:
+          type: string
+          minLength: 1
+    IndexRootDto:
+      type: object
+      properties:
+        id:
+          type: string
+        path:
+          type: string
+        status:
+          type: string
+          enum:
+          - IDLE
+          - SCANNING
+          - WATCHING
+          - ERROR
+        totalFiles:
+          type: integer
+          format: int32
+        processedFiles:
+          type: integer
+          format: int32
+        docCount:
+          type: integer
+          format: int64
+        lastError:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    HighlightFragmentDto:
+      type: object
+      properties:
+        text:
+          type: string
+        matched:
+          type: boolean
+    SearchHitDto:
+      type: object
+      properties:
+        id:
+          type: string
+        path:
+          type: string
+        fileName:
+          type: string
+        extension:
+          type: string
+        sizeBytes:
+          type: integer
+          format: int64
+        modifiedAt:
+          type: string
+          format: date-time
+        highlights:
+          type: array
+          items:
+            type: array
+            items:
+              $ref: "#/components/schemas/HighlightFragmentDto"
+        downloadUrl:
+          type: string
+    SearchResponseDto:
+      type: object
+      properties:
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchHitDto"
+    FileDetailDto:
+      type: object
+      properties:
+        id:
+          type: string
+        path:
+          type: string
+        fileName:
+          type: string
+        extension:
+          type: string
+        contentType:
+          type: string
+        sizeBytes:
+          type: integer
+          format: int64
+        modifiedAt:
+          type: string
+          format: date-time
+        author:
+          type: string
+        title:
+          type: string
+        documentCreatedAt:
+          type: string
+          format: date-time
+        content:
+          type: string
+        truncated:
+          type: boolean

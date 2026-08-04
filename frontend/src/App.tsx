@@ -58,6 +58,9 @@ function AuthenticatedApp({ username, healthy, onLogout }: { username: string; h
         <span className={`health-badge ${healthy ? 'healthy' : 'unhealthy'}`}>
           {healthy ? 'Elasticsearch доступен' : 'Elasticsearch недоступен'}
         </span>
+        <a className="api-docs-link" href="/swagger-ui/index.html" target="_blank" rel="noopener noreferrer">
+          API docs
+        </a>
         <span className="current-user">{username}</span>
         <button type="button" className="logout-button" onClick={onLogout}>
           Выйти

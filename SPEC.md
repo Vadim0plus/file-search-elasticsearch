@@ -95,7 +95,7 @@ CORS открыт для origin фронтенда. `spring-boot-starter-actuato
 
 ### 4.5 Зависимости
 
-`spring-boot-starter-webmvc`, `spring-boot-starter-security`, `spring-boot-starter-data-elasticsearch`, `spring-boot-starter-actuator`, `spring-boot-starter-validation`, `org.apache.tika:tika-core` + `tika-parsers-standard-package`, `lombok` (Spring Boot 4.1 / Java 21 / Gradle Kotlin DSL).
+`spring-boot-starter-webmvc`, `spring-boot-starter-security`, `spring-boot-starter-data-elasticsearch`, `spring-boot-starter-actuator`, `spring-boot-starter-validation`, `org.apache.tika:tika-core` + `tika-parsers-standard-package`, `org.springdoc:springdoc-openapi-starter-webmvc-ui`, `lombok` (Spring Boot 4.1 / Java 21 / Gradle Kotlin DSL).
 
 ### 4.6 Морфологический поиск и поиск по имени файла
 
@@ -131,13 +131,17 @@ CORS открыт для origin фронтенда. `spring-boot-starter-actuato
 
 `POST /api/roots/{id}/upload` (multipart, в `IndexController`) сохраняет файл на диск в директорию root'а: имя файла санитизируется через `Path.of(name).getFileName()` (обрезает любые сегменты пути) плюс проверка `destination.startsWith(root.getPath())` как доп. защита от path traversal. Отдельного вызова индексации не требуется — директория уже отслеживается `FileWatchService` с момента регистрации root'а, и обычная обработка `ENTRY_CREATE` подхватывает новый файл.
 
+### 4.11 OpenAPI / Swagger
+
+`springdoc-openapi-starter-webmvc-ui` сканирует контроллеры и публикует спеку на `/v3/api-docs` (JSON) и `/v3/api-docs.yaml`, плюс Swagger UI на `/swagger-ui/index.html` — без дополнительной аннотации кода. Все три пути явно открыты в `SecurityConfig` без авторизации (демо-приложение — документация должна открываться по прямой ссылке). `/api/auth/login` и `/api/auth/logout` обрабатываются фильтрами Spring Security, а не `@Controller`-методами, поэтому springdoc их не находит сам — `OpenApiConfig` добавляет эти два пути в спеку вручную через `OpenApiCustomizer`. nginx во фронтенд-контейнере проксирует `/swagger-ui/*` и `/v3/api-docs*` на backend, как и `/api/*`/`/actuator/*`. В `docs/openapi.yaml` лежит статичный снимок спеки (не обновляется автоматически — актуальная версия всегда доступна по живым эндпоинтам).
+
 ## 5. Frontend — React + TypeScript (Vite)
 
 - **Авторизация**: `AuthProvider`/`useAuth` (React Context) на старте вызывает `GET /api/auth/me`; пока не залогинен — рендерится `LoginPage` вместо основного приложения. Все запросы `api/client.ts` идут через общий `apiFetch` с `credentials: 'include'` (сессионная кука). Авторизованный контент вынесен в отдельный компонент `AuthenticatedApp`, монтируемый только после входа — это важно: если бы поиск жил прямо в корневом `App`, его `useLiveSearch` выполнил бы (и получил 401) ещё до логина, и эта ошибка не сбросилась бы после успешного входа, так как ничего в зависимостях эффекта не менялось.
 - **Вкладка «Поиск»**: `SearchBar` реагирует на каждое нажатие клавиши, дебаунс ~250-300мс (`useDebouncedValue`); `useLiveSearch` шлёт `/api/search` по дебаунсированному значению (в т.ч. с пустой строкой — см. §4.6.1), игнорируя устаревшие ответы, если пришёл более новый запрос. Рядом — `Filters` (чекбоксы расширений, префикс пути, диапазон дат). Стартового экрана «начните вводить текст» нет: без запроса `SearchResults` сразу показывает список файлов (счётчик «Всего файлов: N»), при активном поиске — «Найдено файлов: N». Результаты — список `ResultItem`: иконка по типу файла (`utils/fileIcon.ts`), имя, путь, размер, дата изменения, подсвеченный фрагмент (рендерится из списка экранированных фрагментов, `matched` — в `<mark>`), кнопки «Просмотр» и «Скачать». Плюс `Pagination`.
 - **Предпросмотр**: `FilePreviewModal` по клику «Просмотр» запрашивает `GET /api/files/{id}` и рендерит по `contentType` — `<img>` для изображений, `<iframe>` для PDF (оба через `/preview`, inline), иначе извлечённый текст в `<pre>` (как обычный React-текст, никогда не как HTML). Сверху — метаданные (автор/заголовок/дата), если есть.
 - **Вкладка «Индексация»**: `IndexManager` — добавление root'а (путь внутри контейнера backend, например `/data/...`), таблица root'ов с живым статусом/прогрессом (поллинг раз в ~2с во время `SCANNING`), кнопки «Загрузить файл» (скрытый `<input type="file">` под `<label>`, POST multipart на `/api/roots/{id}/upload`), «Переиндексировать», «Удалить».
-- Индикатор доступности ES в шапке на основе `/actuator/health`, текущий пользователь и кнопка «Выйти».
+- Индикатор доступности ES в шапке на основе `/actuator/health`, ссылка «API docs» на Swagger UI (`/swagger-ui/index.html`, открывается в новой вкладке), текущий пользователь и кнопка «Выйти».
 - Тёмная тема — единственная и безусловная (`:root` без `@media (prefers-color-scheme)`): большинство браузеров репортуют `light` по умолчанию, если у ОС явно не включена тёмная тема, поэтому условный светлый override почти всегда «побеждал» бы и делал тёмную тему не работающей на практике по умолчанию.
 - Стек: Vite + React 19 + TypeScript, обычный CSS (без тяжёлого UI-кита).
 
@@ -145,12 +149,14 @@ CORS открыт для origin фронтенда. `spring-boot-starter-actuato
 
 - `elasticsearch` — single-node 9.x, `xpack.security.enabled=false` (упрощение для dev), named volume для данных, healthcheck.
 - `backend` — сборка из `backend/Dockerfile` (multi-stage Gradle → JRE 21, контейнер работает от root — см. ниже), `depends_on: elasticsearch (healthy)`, монтирует `${INDEX_ROOT:-./sample-data}:/data` (на запись — загрузка файлов через UI пишет прямо в этот том) — пользователь может указать любую директорию хоста через переменную окружения, `SPRING_ELASTICSEARCH_URIS=http://elasticsearch:9200`, публикуется на хост-порт `${BACKEND_PORT:-7007}`.
-- `frontend` — сборка из `frontend/Dockerfile` (multi-stage Vite build → nginx), nginx проксирует `/api/*` и `/actuator/*` на `backend:8080`, публикуется на хост-порт `${FRONTEND_PORT:-7006}`.
+- `frontend` — сборка из `frontend/Dockerfile` (multi-stage Vite build → nginx), nginx проксирует `/api/*`, `/actuator/*`, `/swagger-ui/*` и `/v3/api-docs*` на `backend:8080`, публикуется на хост-порт `${FRONTEND_PORT:-7006}`.
 - `sample-data/` — демонстрационные файлы всех поддерживаемых форматов (txt/md/csv/pdf/docx/xlsx/pptx) на русском, чтобы `docker compose up` сразу давало что индексировать и было видно работу метаданных/предпросмотра/морфологии на разных типах файлов.
 
 **Почему backend-контейнер без выделенного непривилегированного пользователя**: он пишет загруженные файлы напрямую в bind-mount хостовой директории, владелец которой — хостовый пользователь. UID выделенного пользователя внутри контейнера не совпадает с UID на хосте (не портируется между машинами), из-за чего запись падала с `AccessDeniedException`. Root внутри контейнера снимает это несоответствие для демо-приложения; для продакшена лучше явно сопоставлять UID (например, через `user: "${UID}:${GID}"` в compose).
 
 ## 7. Тестирование
+
+Покрытие: `jacoco` Gradle-плагин (backend, `./gradlew test jacocoTestReport`) и `@vitest/coverage-v8` (frontend, `npm run test:coverage`) — снимок текущих цифр в README.
 
 **Backend (JUnit 5):**
 - Юнит-тесты: `TextExtractionService` (текст и метаданные из фикстур .txt/.pdf/.docx — DOCX-фикстура с автором/заголовком генерируется в тесте через Apache POI `XWPFDocument`, транзитивная зависимость `tika-parsers-standard-package`, без чек-ина бинарника; корректная обработка «битого» файла без исключения), `SearchService` (построение запроса/фильтров, разбиение фрагментов подсветки — включая XSS-кейс с `<script>` в содержимом).

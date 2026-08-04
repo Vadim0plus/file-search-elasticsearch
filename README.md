@@ -35,7 +35,7 @@
 
 | Слой | Технологии |
 |---|---|
-| Backend | Java 21, Spring Boot 4.1 (Web, Security, Data Elasticsearch, Actuator, Validation), Gradle (Kotlin DSL), Apache Tika, Lombok |
+| Backend | Java 21, Spring Boot 4.1 (Web, Security, Data Elasticsearch, Actuator, Validation), Gradle (Kotlin DSL), Apache Tika, Lombok, springdoc-openapi |
 | Поиск | Elasticsearch 9.x (через официальный `elasticsearch-java` клиент — прямые запросы с multi_match, fuzziness, highlighting, `russian` analyzer) |
 | Frontend | React 19, TypeScript, Vite, обычный CSS (без UI-кита) |
 | Тесты | JUnit 5, Testcontainers (реальный Elasticsearch), MockMvc, Spring Security Test — backend; Vitest, React Testing Library, msw — frontend |
@@ -49,9 +49,10 @@
 docker compose up --build
 ```
 
-Поднимутся три контейнера: `elasticsearch`, `backend` (порт `7007`) и `frontend` (порт `7006`, nginx с проксированием `/api` и `/actuator` на backend). По умолчанию в контейнер backend монтируется директория `./sample-data` (демонстрационные файлы всех поддерживаемых форматов на русском) как `/data` (на запись — загрузка файлов через UI пишет прямо в этот том).
+Поднимутся три контейнера: `elasticsearch`, `backend` (порт `7007`) и `frontend` (порт `7006`, nginx с проксированием `/api`, `/actuator`, `/swagger-ui` и `/v3/api-docs` на backend). По умолчанию в контейнер backend монтируется директория `./sample-data` (демонстрационные файлы всех поддерживаемых форматов на русском) как `/data` (на запись — загрузка файлов через UI пишет прямо в этот том).
 
 Открыть приложение: **http://localhost:7006**
+Swagger UI (кнопка «API docs» в шапке или напрямую): **http://localhost:7006/swagger-ui/index.html**
 
 Данные для входа по умолчанию: **admin / admin** (переопределяются через `APP_AUTH_USERNAME`/`APP_AUTH_PASSWORD`, см. ниже).
 
@@ -102,6 +103,33 @@ docker compose down
 | `GET` | `/api/files/{id}/preview` | Отдать файл inline (для рендера в браузере — PDF/изображения/текст) |
 | `GET` | `/actuator/health` | Доступность приложения и Elasticsearch (открыт без авторизации) |
 
+### OpenAPI / Swagger
+
+Спека генерируется автоматически (springdoc-openapi) и открыта без авторизации — эндпоинты `/api/auth/login`/`/api/auth/logout` обрабатываются фильтром Spring Security, а не контроллером, поэтому добавлены в спеку вручную (`OpenApiConfig`), чтобы не потеряться в документации.
+
+- Swagger UI: `http://localhost:7006/swagger-ui/index.html` (через прокси) или `http://localhost:7007/swagger-ui/index.html` (напрямую к backend)
+- Спека в JSON: `/v3/api-docs`, в YAML: `/v3/api-docs.yaml`
+- Статичная копия спеки на момент последнего обновления — в репозитории: [`docs/openapi.yaml`](docs/openapi.yaml) (снимок, не обновляется автоматически — актуальная всегда живая, по ссылкам выше)
+
+## Метрики проекта
+
+Снимок на момент последнего коммита (считается локально, не обновляется автоматически в CI):
+
+| | Backend (Java) | Frontend (TS/TSX) |
+|---|---|---|
+| Покрытие тестами (строки) | 81.4% ([JaCoCo](backend/build.gradle.kts)) | 66.9% ([Vitest coverage](frontend/vite.config.ts)) |
+| Строк кода (без тестов) | ~1500 | ~1030 (+ ~550 CSS) |
+| Строк тестов | ~820 | ~660 |
+
+Всего в проекте (Java + TS/TSX + CSS, без учёта конфигов): **~4560 строк**.
+
+Пересчитать самостоятельно:
+
+```bash
+cd backend && ./gradlew test jacocoTestReport   # backend/build/reports/jacoco/test/html/index.html
+cd frontend && npm run test:coverage             # frontend/coverage/index.html
+```
+
 ## Локальная разработка (без Docker)
 
 Понадобится отдельно запущенный Elasticsearch 9.x на `localhost:9200`.
@@ -144,7 +172,9 @@ cd frontend && npm test
 ├── backend/                 # Spring Boot API (индексация, поиск, скачивание, авторизация)
 ├── frontend/                 # React SPA (поиск, превью, управление индексом, загрузка)
 ├── sample-data/              # демонстрационные файлы всех форматов для docker compose up
-└── docs/screenshots/         # скриншоты для этого README
+└── docs/
+    ├── screenshots/           # скриншоты для этого README
+    └── openapi.yaml           # снимок OpenAPI-спеки (актуальная всегда доступна живьём)
 ```
 
 ## Безопасность

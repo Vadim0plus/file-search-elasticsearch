@@ -50,7 +50,12 @@ class FileIndexingIntegrationTest {
     @Container
     static final ElasticsearchContainer elasticsearch = new ElasticsearchContainer(
         DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch:9.1.0")
-    ).withEnv("xpack.security.enabled", "false");
+    )
+        .withEnv("xpack.security.enabled", "false")
+        // ES startup time in this sandbox varies wildly (~20s to 90s+) depending on host load;
+        // the default wait strategy timeout is too tight and causes flaky failures unrelated to
+        // the code under test.
+        .withStartupTimeout(Duration.ofMinutes(3));
 
     @DynamicPropertySource
     static void elasticsearchProperties(DynamicPropertyRegistry registry) {

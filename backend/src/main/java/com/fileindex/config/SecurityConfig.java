@@ -50,6 +50,10 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/api/auth/login", "/api/auth/logout").permitAll()
+                // API docs are open without login (same tradeoff as CSRF above: this is a demo
+                // app, and being able to open the API reference from a plain link matters more
+                // here than gating read-only documentation behind auth).
+                .requestMatchers("/v3/api-docs", "/v3/api-docs.yaml", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form

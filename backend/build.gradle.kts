@@ -1,5 +1,6 @@
 plugins {
 	java
+	jacoco
 	id("org.springframework.boot") version "4.1.0"
 	id("io.spring.dependency-management") version "1.1.7"
 }
@@ -27,6 +28,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.apache.tika:tika-core:2.9.2")
 	implementation("org.apache.tika:tika-parsers-standard-package:2.9.2")
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
 	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
 	testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
@@ -57,4 +59,17 @@ tasks.withType<Test> {
 	// property (not the DOCKER_API_VERSION env var), so pin it explicitly here.
 	systemProperty("api.version", "1.44")
 	environment("DOCKER_HOST", "unix:///var/run/docker.sock")
+	finalizedBy(tasks.jacocoTestReport)
+}
+
+jacoco {
+	toolVersion = "0.8.12"
+}
+
+tasks.jacocoTestReport {
+	dependsOn(tasks.test)
+	reports {
+		xml.required.set(true)
+		html.required.set(true)
+	}
 }
