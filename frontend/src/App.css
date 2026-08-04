@@ -190,6 +190,28 @@ main {
   cursor: pointer;
 }
 
+.filters-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.filters-tag-add {
+  display: inline-flex;
+}
+
+.filters-tag-add input {
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px dashed var(--border);
+  background: var(--bg);
+  color: var(--text);
+  width: 110px;
+}
+
 .filters-path {
   font: inherit;
   padding: 6px 10px;
@@ -269,6 +291,118 @@ main {
   color: var(--text-muted);
   margin-top: 2px;
   word-break: break-all;
+}
+
+.tag-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.tag-chip-removable {
+  padding-right: 4px;
+}
+
+.tag-ai-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  opacity: 0.8;
+}
+
+.tag-remove-button {
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 2px;
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.tag-remove-button:hover {
+  opacity: 1;
+}
+
+.tag-editor {
+  margin: 0 0 16px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-subtle);
+}
+
+.tag-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tag-editor-label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.tag-generate-button {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tag-generate-button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.tag-add-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.tag-add-form input {
+  flex: 1;
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.tag-add-form button {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
 }
 
 .result-excerpt {

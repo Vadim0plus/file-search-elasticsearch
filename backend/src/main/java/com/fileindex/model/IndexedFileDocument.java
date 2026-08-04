@@ -1,6 +1,8 @@
 package com.fileindex.model;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -31,7 +33,9 @@ public class IndexedFileDocument {
     // SearchService queries this index directly by name via the low-level ElasticsearchClient
     // (bypassing Spring Data's repository abstraction), so it reads this same constant instead
     // of duplicating the literal - keeps the two from drifting apart on a future mapping bump.
-    public static final String INDEX_NAME = "files_v3";
+    // Bumped to v4 when the tags/aiTags fields were added (see the class comment above for why
+    // a mapping change means a new index name rather than an in-place update).
+    public static final String INDEX_NAME = "files_v4";
 
     // Custom analyzer name used for fileName - see ElasticsearchIndexInitializer for the actual
     // analyzer definition (a pattern tokenizer, not "russian"/"standard": both of those keep a
@@ -84,4 +88,15 @@ public class IndexedFileDocument {
 
     @Field(type = FieldType.Date)
     private Instant documentCreatedAt;
+
+    // All tags currently active on the file - both AI-suggested and manually added - used for
+    // the tag search filter. aiTags is a subset marking which of these came from AI generation,
+    // kept around after generation so the UI can badge them even once merged into this list.
+    @Field(type = FieldType.Keyword)
+    @Builder.Default
+    private List<String> tags = new ArrayList<>();
+
+    @Field(type = FieldType.Keyword)
+    @Builder.Default
+    private List<String> aiTags = new ArrayList<>();
 }

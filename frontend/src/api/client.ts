@@ -1,4 +1,4 @@
-import type { ApiError, FileDetail, IndexRoot, SearchFilters, SearchResponse } from './types'
+import type { ApiError, FileDetail, IndexRoot, SearchFilters, SearchResponse, TagCount, Tags } from './types'
 
 const BASE_URL = '/api'
 
@@ -36,6 +36,7 @@ export async function searchFiles({ query, filters, page = 0, size = 20, signal 
     params.set('q', query)
   }
   filters.extensions?.forEach((ext) => params.append('extension', ext))
+  filters.tags?.forEach((tag) => params.append('tag', tag))
   if (filters.path) {
     params.set('path', filters.path)
   }
@@ -55,6 +56,30 @@ export async function searchFiles({ query, filters, page = 0, size = 20, signal 
 export async function getFileDetail(id: string): Promise<FileDetail> {
   const response = await apiFetch(`/files/${id}`)
   return parseJsonOrThrow<FileDetail>(response)
+}
+
+export async function listTags(): Promise<TagCount[]> {
+  const response = await apiFetch('/tags')
+  return parseJsonOrThrow<TagCount[]>(response)
+}
+
+export async function generateTags(fileId: string): Promise<Tags> {
+  const response = await apiFetch(`/files/${fileId}/tags/generate`, { method: 'POST' })
+  return parseJsonOrThrow<Tags>(response)
+}
+
+export async function addTag(fileId: string, tag: string): Promise<Tags> {
+  const response = await apiFetch(`/files/${fileId}/tags`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tag }),
+  })
+  return parseJsonOrThrow<Tags>(response)
+}
+
+export async function removeTag(fileId: string, tag: string): Promise<Tags> {
+  const response = await apiFetch(`/files/${fileId}/tags/${encodeURIComponent(tag)}`, { method: 'DELETE' })
+  return parseJsonOrThrow<Tags>(response)
 }
 
 export async function listRoots(): Promise<IndexRoot[]> {

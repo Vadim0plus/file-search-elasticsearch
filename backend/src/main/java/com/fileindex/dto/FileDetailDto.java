@@ -1,6 +1,7 @@
 package com.fileindex.dto;
 
 import java.time.Instant;
+import java.util.List;
 
 public record FileDetailDto(
     String id,
@@ -14,6 +15,8 @@ public record FileDetailDto(
     String title,
     Instant documentCreatedAt,
     String content,
-    boolean truncated
+    boolean truncated,
+    List<String> tags,
+    List<String> aiTags
 ) {
 }

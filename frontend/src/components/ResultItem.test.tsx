@@ -19,6 +19,7 @@ const baseHit: SearchHit = {
     ],
   ],
   downloadUrl: '/api/files/abc123/download',
+  tags: ['отчёт', 'финансы'],
 }
 
 describe('ResultItem', () => {
@@ -28,6 +29,13 @@ describe('ResultItem', () => {
     const mark = screen.getByText('match')
     expect(mark.tagName).toBe('MARK')
     expect(screen.getByText('before', { exact: false })).toBeInTheDocument()
+  })
+
+  it('renders the file tags as chips', () => {
+    render(<ResultItem hit={baseHit} onPreview={vi.fn()} />)
+
+    expect(screen.getByText('отчёт')).toBeInTheDocument()
+    expect(screen.getByText('финансы')).toBeInTheDocument()
   })
 
   it('links the download control at the hit-provided URL with the file name', () => {

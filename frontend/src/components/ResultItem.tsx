@@ -37,6 +37,15 @@ export function ResultItem({ hit, onPreview }: ResultItemProps) {
         </span>
       </div>
       <div className="result-path">{hit.path}</div>
+      {hit.tags.length > 0 && (
+        <ul className="tag-list">
+          {hit.tags.map((tag) => (
+            <li className="tag-chip" key={tag}>
+              {tag}
+            </li>
+          ))}
+        </ul>
+      )}
       {hit.highlights.map((fragments, snippetIndex) => (
         <p className="result-excerpt" key={snippetIndex}>
           {fragments.map((fragment, fragmentIndex) =>

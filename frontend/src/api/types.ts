@@ -12,6 +12,7 @@ export interface SearchHit {
   modifiedAt: string
   highlights: HighlightFragment[][]
   downloadUrl: string
+  tags: string[]
 }
 
 export interface SearchResponse {
@@ -23,9 +24,20 @@ export interface SearchResponse {
 
 export interface SearchFilters {
   extensions: string[]
+  tags: string[]
   path: string
   from: string
   to: string
+}
+
+export interface TagCount {
+  tag: string
+  count: number
+}
+
+export interface Tags {
+  tags: string[]
+  aiTags: string[]
 }
 
 export type IndexRootStatus = 'IDLE' | 'SCANNING' | 'WATCHING' | 'ERROR'
@@ -58,4 +70,6 @@ export interface FileDetail {
   documentCreatedAt: string | null
   content: string
   truncated: boolean
+  tags: string[]
+  aiTags: string[]
 }

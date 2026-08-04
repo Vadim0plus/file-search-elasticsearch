@@ -17,6 +17,8 @@ const baseDetail = {
   documentCreatedAt: null,
   content: 'Hello world',
   truncated: false,
+  tags: [],
+  aiTags: [],
 }
 
 describe('FilePreviewModal', () => {

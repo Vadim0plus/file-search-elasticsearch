@@ -50,7 +50,8 @@ class SearchControllerTest {
                 10,
                 Instant.parse("2024-01-01T00:00:00Z"),
                 List.of(List.of(new HighlightFragmentDto("hello", true))),
-                "/api/files/id1/download"
+                "/api/files/id1/download",
+                List.of("отчёт")
             )
         ));
         when(searchService.search(any())).thenReturn(response);
@@ -61,7 +62,8 @@ class SearchControllerTest {
             .andExpect(jsonPath("$.results[0].id").value("id1"))
             .andExpect(jsonPath("$.results[0].downloadUrl").value("/api/files/id1/download"))
             .andExpect(jsonPath("$.results[0].highlights[0][0].text").value("hello"))
-            .andExpect(jsonPath("$.results[0].highlights[0][0].matched").value(true));
+            .andExpect(jsonPath("$.results[0].highlights[0][0].matched").value(true))
+            .andExpect(jsonPath("$.results[0].tags[0]").value("отчёт"));
     }
 
     @Test
@@ -74,5 +76,17 @@ class SearchControllerTest {
         ArgumentCaptor<SearchQuery> captor = ArgumentCaptor.forClass(SearchQuery.class);
         verify(searchService).search(captor.capture());
         assertThat(captor.getValue().size()).isEqualTo(100);
+    }
+
+    @Test
+    void passesTagParamsThroughToSearchQuery() throws Exception {
+        when(searchService.search(any())).thenReturn(new SearchResponseDto(0, 0, 20, List.of()));
+
+        mockMvc.perform(get("/api/search").param("tag", "договор", "счёт"))
+            .andExpect(status().isOk());
+
+        ArgumentCaptor<SearchQuery> captor = ArgumentCaptor.forClass(SearchQuery.class);
+        verify(searchService).search(captor.capture());
+        assertThat(captor.getValue().tags()).containsExactly("договор", "счёт");
     }
 }

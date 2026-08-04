@@ -37,6 +37,10 @@ app:
   auth:
     username: ${APP_AUTH_USERNAME:admin}
     password: ${APP_AUTH_PASSWORD:admin}
+  ai:
+    api-key: ${ANTHROPIC_API_KEY:}
+    model: ${APP_AI_MODEL:claude-opus-5}
+    max-content-chars: 8000
 
 management:
   endpoints:

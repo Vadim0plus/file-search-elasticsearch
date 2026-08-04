@@ -13,7 +13,7 @@ import { useDebouncedValue } from './hooks/useDebouncedValue'
 import { useHealth } from './hooks/useHealth'
 import { useLiveSearch } from './hooks/useLiveSearch'
 
-const EMPTY_FILTERS: SearchFilters = { extensions: [], path: '', from: '', to: '' }
+const EMPTY_FILTERS: SearchFilters = { extensions: [], tags: [], path: '', from: '', to: '' }
 const SEARCH_PAGE_SIZE = 20
 // Landing on the page with no query yet is "browsing", not searching - a shorter page keeps
 // the first thing a new user sees to a quick top-10 glance rather than a full paginated list.

@@ -94,6 +94,19 @@ public class SearchService {
             filters.add(Query.of(q -> q.terms(t -> t.field("extension").terms(tv -> tv.value(values)))));
         }
 
+        // Unlike extensions (any-of), each selected tag is its own filter clause - picking
+        // multiple tags narrows the results to files carrying all of them, which is what users
+        // expect from stacking tag chips (an any-of match would barely narrow anything once a
+        // file has more than a couple of tags).
+        if (searchQuery.tags() != null) {
+            for (String tag : searchQuery.tags()) {
+                if (tag != null && !tag.isBlank()) {
+                    String normalized = TagService.normalize(tag);
+                    filters.add(Query.of(q -> q.term(t -> t.field("tags").value(normalized))));
+                }
+            }
+        }
+
         if (searchQuery.pathPrefix() != null && !searchQuery.pathPrefix().isBlank()) {
             filters.add(Query.of(q -> q.prefix(p -> p.field("directory").value(searchQuery.pathPrefix()))));
         }
@@ -127,7 +140,8 @@ public class SearchService {
             doc.getSizeBytes(),
             doc.getModifiedAt(),
             highlights,
-            "/api/files/" + doc.getId() + "/download"
+            "/api/files/" + doc.getId() + "/download",
+            doc.getTags()
         );
     }
 

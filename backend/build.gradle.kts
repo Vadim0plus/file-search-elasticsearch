@@ -29,6 +29,7 @@ dependencies {
 	implementation("org.apache.tika:tika-core:2.9.2")
 	implementation("org.apache.tika:tika-parsers-standard-package:2.9.2")
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
+	implementation("com.anthropic:anthropic-java:2.52.0")
 	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
 	testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")

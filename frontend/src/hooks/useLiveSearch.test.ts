@@ -29,6 +29,7 @@ function makeResponse(total: number, label: string): SearchResponse {
         modifiedAt: '2024-01-01T00:00:00Z',
         highlights: [],
         downloadUrl: `/api/files/${label}/download`,
+        tags: [],
       },
     ],
   }

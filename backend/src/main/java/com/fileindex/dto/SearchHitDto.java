@@ -11,6 +11,7 @@ public record SearchHitDto(
     long sizeBytes,
     Instant modifiedAt,
     List<List<HighlightFragmentDto>> highlights,
-    String downloadUrl
+    String downloadUrl,
+    List<String> tags
 ) {
 }

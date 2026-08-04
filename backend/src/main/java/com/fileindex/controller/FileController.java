@@ -54,7 +54,9 @@ public class FileController {
             doc.getDocumentTitle(),
             doc.getDocumentCreatedAt(),
             preview,
-            truncated
+            truncated,
+            doc.getTags(),
+            doc.getAiTags()
         );
     }
 

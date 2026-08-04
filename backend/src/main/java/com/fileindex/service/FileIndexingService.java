@@ -13,6 +13,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -131,9 +132,21 @@ public class FileIndexingService {
         BasicFileAttributes attrs = Files.readAttributes(file, BasicFileAttributes.class);
         Path absolute = file.toAbsolutePath().normalize();
         String fileName = absolute.getFileName().toString();
+        String id = PathHashUtil.hash(absolute);
+
+        // Re-scanning (via the file watcher or a manual reindex) rebuilds this document from
+        // scratch and repository.save() replaces it wholesale - without carrying tags forward,
+        // every edit to a file on disk would silently wipe out its tags.
+        List<String> existingTags = List.of();
+        List<String> existingAiTags = List.of();
+        Optional<IndexedFileDocument> existing = repository.findById(id);
+        if (existing.isPresent()) {
+            existingTags = existing.get().getTags();
+            existingAiTags = existing.get().getAiTags();
+        }
 
         return IndexedFileDocument.builder()
-            .id(PathHashUtil.hash(absolute))
+            .id(id)
             .path(absolute.toString())
             .fileName(fileName)
             .extension(extensionOf(fileName))
@@ -147,6 +160,8 @@ public class FileIndexingService {
             .author(extracted.author())
             .documentTitle(extracted.title())
             .documentCreatedAt(extracted.createdDate())
+            .tags(new ArrayList<>(existingTags))
+            .aiTags(new ArrayList<>(existingAiTags))
             .build();
     }
 

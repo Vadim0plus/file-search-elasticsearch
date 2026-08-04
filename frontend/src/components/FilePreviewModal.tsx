@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getFileDetail } from '../api/client'
 import type { FileDetail } from '../api/types'
+import { TagEditor } from './TagEditor'
 
 interface FilePreviewModalProps {
   fileId: string
@@ -65,6 +66,8 @@ export function FilePreviewModal({ fileId, onClose }: FilePreviewModalProps) {
                 )}
               </dl>
             )}
+
+            <TagEditor key={detail.id} fileId={detail.id} tags={detail.tags} aiTags={detail.aiTags} />
 
             <div className="preview-body">
               {detail.contentType.startsWith('image/') ? (

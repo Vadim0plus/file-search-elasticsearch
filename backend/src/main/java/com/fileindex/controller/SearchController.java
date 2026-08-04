@@ -25,6 +25,7 @@ public class SearchController {
     public SearchResponseDto search(
         @RequestParam(required = false) String q,
         @RequestParam(required = false) List<String> extension,
+        @RequestParam(required = false) List<String> tag,
         @RequestParam(required = false) String path,
         @RequestParam(required = false) Instant from,
         @RequestParam(required = false) Instant to,
@@ -33,7 +34,7 @@ public class SearchController {
     ) throws IOException {
         int boundedSize = Math.max(1, Math.min(size, MAX_PAGE_SIZE));
         int boundedPage = Math.max(0, page);
-        SearchQuery query = new SearchQuery(q, extension, path, from, to, boundedPage, boundedSize);
+        SearchQuery query = new SearchQuery(q, extension, tag, path, from, to, boundedPage, boundedSize);
         return searchService.search(query);
     }
 }

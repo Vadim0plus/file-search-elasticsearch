@@ -21,6 +21,8 @@ services:
       # auto-registers the mounted volume below as an index root on startup - see
       # DefaultIndexRootInitializer
       - APP_INDEXING_DEFAULT_ROOT=/data
+      # Optional: enables the "generate tags with AI" feature. Unset -> that endpoint returns 503.
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
     depends_on:
       elasticsearch:
         condition: service_healthy
