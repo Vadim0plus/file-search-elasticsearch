@@ -1,5 +1,11 @@
 # Поиск файлов на диске (Spring Boot + React + Elasticsearch)
 
+[![Backend CI](https://github.com/Vadim0plus/file-search-elasticsearch/actions/workflows/backend.yml/badge.svg?branch=main)](https://github.com/Vadim0plus/file-search-elasticsearch/actions/workflows/backend.yml)
+[![Frontend CI](https://github.com/Vadim0plus/file-search-elasticsearch/actions/workflows/frontend.yml/badge.svg?branch=main)](https://github.com/Vadim0plus/file-search-elasticsearch/actions/workflows/frontend.yml)
+[![Backend coverage](https://img.shields.io/badge/backend%20coverage-81.4%25-brightgreen)](#метрики-проекта)
+[![Frontend coverage](https://img.shields.io/badge/frontend%20coverage-66.9%25-yellow)](#метрики-проекта)
+[![Lines of code](https://img.shields.io/badge/lines%20of%20code-~4.5k-blue)](#метрики-проекта)
+
 Приложение индексирует файлы на диске (текст, PDF, DOCX, XLSX, PPTX и др.) и даёт быстрый полнотекстовый поиск по содержимому с морфологией русского языка, подсветкой совпадений, предпросмотром и метаданными документов. Индекс остаётся актуальным в реальном времени: изменения файлов на диске (в том числе загруженных прямо через интерфейс) подхватываются автоматически, без ручной переиндексации.
 
 Полная спецификация и обоснование архитектурных решений — в [SPEC.md](SPEC.md).
@@ -113,7 +119,7 @@ docker compose down
 
 ## Метрики проекта
 
-Снимок на момент последнего коммита (считается локально, не обновляется автоматически в CI):
+Снимок на момент последнего коммита (считается локально, не обновляется автоматически в CI — значки покрытия/LOC в шапке README отражают тот же снимок и обновляются вручную вместе с этой таблицей):
 
 | | Backend (Java) | Frontend (TS/TSX) |
 |---|---|---|
