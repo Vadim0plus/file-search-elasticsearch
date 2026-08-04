@@ -91,6 +91,21 @@ docker compose down
 
 Добавить `-v`, чтобы удалить и данные индекса.
 
+### Развёртывание под доменом (nginx-шлюз)
+
+Помимо прямых портов `frontend`/`backend`, в `docker-compose.yml` есть сервис `nginx` — reverse-proxy шлюз,
+который отдаёт всё приложение (UI + `/api` + `/swagger-ui` и т.д., через `frontend`) под одним адресом,
+без разброса по портам. Домен задаётся переменной `APP_DOMAIN`, порт на хосте — `NGINX_PORT`:
+
+```bash
+APP_DOMAIN=filesearch.example.com NGINX_PORT=80 docker compose up --build nginx frontend backend elasticsearch
+```
+
+По умолчанию (`APP_DOMAIN=localhost`, `NGINX_PORT=80`) приложение будет доступно на **http://localhost**.
+Для реального домена настройте DNS/`/etc/hosts` на IP хоста и укажите этот домен в `APP_DOMAIN` — nginx
+подставит его в `server_name` при старте контейнера (шаблон в `nginx/templates/default.conf.template`,
+обрабатывается штатным `envsubst` из образа `nginx:alpine`).
+
 ## API
 
 Все эндпоинты под `/api/**`, кроме `/api/auth/login` и `/api/auth/logout`, требуют аутентификации (сессионная кука).
