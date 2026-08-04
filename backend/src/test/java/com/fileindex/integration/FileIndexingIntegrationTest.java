@@ -11,7 +11,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.time.Duration;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -209,6 +211,53 @@ class FileIndexingIntegrationTest {
             SearchResponseDto result = search("spaceships");
             assertThat(result.total()).isEqualTo(1);
         });
+
+        delete("/api/roots/" + root.id());
+    }
+
+    @Test
+    void searchMatchesFileNameEvenThoughItIsNotPresentInTheContent(@TempDir Path tempDir) throws IOException {
+        login();
+        // The word "agreement" only appears in the file name, never in the body. The standard
+        // tokenizer treats a dotted name like "agreement.txt" as a single token (same rule that
+        // keeps "example.com" together) unless the fileName field uses the custom pattern
+        // tokenizer, so this only passes once the filename analyzer actually splits it.
+        Path file = tempDir.resolve("agreement.txt");
+        Files.writeString(file, "Some unrelated content about the weather.", StandardCharsets.UTF_8);
+
+        IndexRootDto root = post("/api/roots", new AddRootRequest(tempDir.toString()), IndexRootDto.class);
+        await().atMost(Duration.ofSeconds(30)).pollInterval(Duration.ofMillis(500)).untilAsserted(() -> {
+            IndexRootDto current = get("/api/roots/" + root.id(), IndexRootDto.class);
+            assertThat(current.docCount()).isEqualTo(1);
+        });
+
+        SearchResponseDto result = search("agreement");
+        assertThat(result.total()).isEqualTo(1);
+        assertThat(result.results().get(0).fileName()).isEqualTo("agreement.txt");
+
+        delete("/api/roots/" + root.id());
+    }
+
+    @Test
+    void emptyQueryBrowsesIndexedFilesSortedByMostRecentlyModifiedFirst(@TempDir Path tempDir) throws IOException {
+        login();
+        Path older = tempDir.resolve("older.txt");
+        Path newer = tempDir.resolve("newer.txt");
+        Files.writeString(older, "older file content");
+        Files.writeString(newer, "newer file content");
+        Files.setLastModifiedTime(older, FileTime.from(Instant.now().minusSeconds(3600)));
+        Files.setLastModifiedTime(newer, FileTime.from(Instant.now()));
+
+        IndexRootDto root = post("/api/roots", new AddRootRequest(tempDir.toString()), IndexRootDto.class);
+        await().atMost(Duration.ofSeconds(30)).pollInterval(Duration.ofMillis(500)).untilAsserted(() -> {
+            IndexRootDto current = get("/api/roots/" + root.id(), IndexRootDto.class);
+            assertThat(current.docCount()).isEqualTo(2);
+        });
+
+        SearchResponseDto result = search("");
+        assertThat(result.total()).isEqualTo(2);
+        assertThat(result.results().get(0).fileName()).isEqualTo("newer.txt");
+        assertThat(result.results().get(1).fileName()).isEqualTo("older.txt");
 
         delete("/api/roots/" + root.id());
     }

@@ -2,6 +2,7 @@ package com.fileindex.service;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.FieldValue;
+import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
@@ -48,18 +49,26 @@ public class SearchService {
             return b;
         }));
 
-        SearchResponse<IndexedFileDocument> response = client.search(s -> s
-            .index(INDEX)
-            .query(finalQuery)
-            .from(searchQuery.page() * searchQuery.size())
-            .size(searchQuery.size())
-            .highlight(h -> h
-                .preTags(PRE_TAG)
-                .postTags(POST_TAG)
-                .fields(NamedValue.of("content", HighlightField.of(f -> f.numberOfFragments(3).fragmentSize(150))))
-            ),
-            IndexedFileDocument.class
-        );
+        // With no query text there's nothing to rank by relevance (matchAll scores everything
+        // equally), so browsing the index without a search term lists the most recently
+        // modified files first instead of an arbitrary/index order.
+        boolean browsing = searchQuery.q() == null || searchQuery.q().isBlank();
+
+        SearchResponse<IndexedFileDocument> response = client.search(s -> {
+            s.index(INDEX)
+                .query(finalQuery)
+                .from(searchQuery.page() * searchQuery.size())
+                .size(searchQuery.size())
+                .highlight(h -> h
+                    .preTags(PRE_TAG)
+                    .postTags(POST_TAG)
+                    .fields(NamedValue.of("content", HighlightField.of(f -> f.numberOfFragments(3).fragmentSize(150))))
+                );
+            if (browsing) {
+                s.sort(sort -> sort.field(f -> f.field("modifiedAt").order(SortOrder.Desc)));
+            }
+            return s;
+        }, IndexedFileDocument.class);
 
         List<SearchHitDto> hits = response.hits().hits().stream().map(this::toDto).toList();
         long total = response.hits().total() != null ? response.hits().total().value() : hits.size();

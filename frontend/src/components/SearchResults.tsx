@@ -10,6 +10,9 @@ interface SearchResultsProps {
   onPreview: (id: string) => void
 }
 
+// With an empty query the backend returns a browsable listing (most recently modified files
+// first) instead of nothing, so there's no "start typing" gate here - only loading/error/empty
+// states, plus wording that adapts to whether the user is actively searching or just browsing.
 export function SearchResults({ results, total, loading, error, hasQuery, onPreview }: SearchResultsProps) {
   if (error) {
     return (
@@ -19,17 +22,14 @@ export function SearchResults({ results, total, loading, error, hasQuery, onPrev
     )
   }
   if (loading && results.length === 0) {
-    return <div className="search-status">Идёт поиск...</div>
-  }
-  if (!hasQuery) {
-    return <div className="search-status">Начните вводить текст для поиска по проиндексированным файлам.</div>
+    return <div className="search-status">{hasQuery ? 'Идёт поиск...' : 'Загрузка...'}</div>
   }
   if (results.length === 0) {
-    return <div className="search-status">Ничего не найдено.</div>
+    return <div className="search-status">{hasQuery ? 'Ничего не найдено.' : 'В индексе пока нет файлов.'}</div>
   }
   return (
     <>
-      <p className="result-count">Найдено файлов: {total}</p>
+      <p className="result-count">{hasQuery ? `Найдено файлов: ${total}` : `Всего файлов: ${total}`}</p>
       <ul className="search-results">
         {results.map((hit) => (
           <ResultItem key={hit.id} hit={hit} onPreview={onPreview} />
