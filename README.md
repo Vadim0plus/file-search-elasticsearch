@@ -44,6 +44,7 @@
 |---|---|
 | Backend | Java 21, Spring Boot 4.1 (Web, Security, Data Elasticsearch, Actuator, Validation), Gradle (Kotlin DSL), Apache Tika, Lombok, springdoc-openapi |
 | Поиск | Elasticsearch 9.x (через официальный `elasticsearch-java` клиент — прямые запросы с multi_match, fuzziness, highlighting, `russian` analyzer) |
+| AI | Anthropic API (`com.anthropic:anthropic-java`, structured outputs) — генерация меток по содержимому файла, опционально (см. «Возможности») |
 | Frontend | React 19, TypeScript, Vite, обычный CSS (без UI-кита) |
 | Тесты | JUnit 5, Testcontainers (реальный Elasticsearch), MockMvc, Spring Security Test — backend; Vitest, React Testing Library, msw — frontend |
 | Инфраструктура | Docker Compose (Elasticsearch + backend + nginx-фронтенд) |

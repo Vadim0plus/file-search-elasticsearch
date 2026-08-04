@@ -15,6 +15,7 @@
 - Извлечение и отображение метаданных документа (автор, заголовок, дата создания).
 - Предпросмотр файла (текст/PDF/изображение) без скачивания.
 - Загрузка новых файлов через интерфейс с автоматической индексацией.
+- Метки на файлах: ручное добавление/удаление и автогенерация по содержимому через Claude (Anthropic API); фильтр поиска по меткам.
 - Вход по логину и паролю (защита всех `/api/**`, кроме `/actuator/health`).
 - Автоматические тесты на бэкенде и фронтенде.
 
@@ -34,11 +35,11 @@
                                         контейнера backend)
 ```
 
-Всё поднимается через `docker compose up`: контейнер `elasticsearch`, контейнер `backend` (со смонтированной директорией с файлами для индексации), контейнер `frontend` (nginx, отдаёт статику и проксирует `/api/*` на backend).
+Всё поднимается через `docker compose up`: контейнер `elasticsearch`, контейнер `backend` (со смонтированной директорией с файлами для индексации), контейнер `frontend` (nginx, отдаёт статику и проксирует `/api/*` на backend). При генерации меток (§4.12) `backend` дополнительно ходит наружу в Anthropic API — единственная зависимость приложения от внешнего сервиса, и она полностью опциональна (без ключа этот путь просто не активируется, диаграмма выше не меняется).
 
 ## 3. Модель данных (Elasticsearch)
 
-Индекс `files_v3` (версионирован — см. §4.6), `_id` = SHA-256 от абсолютного пути файла (детерминированный ключ — переиндексация того же файла обновляет тот же документ, а не создаёт дубликат).
+Индекс `files_v4` (версионирован — см. §4.6; бампнут с `v3` при добавлении полей `tags`/`aiTags`, поскольку ES не позволяет добавить новое поле в маппинг задним числом без пересоздания), `_id` = SHA-256 от абсолютного пути файла (детерминированный ключ — переиндексация того же файла обновляет тот же документ, а не создаёт дубликат).
 
 | Поле | Тип ES | Назначение |
 |---|---|---|
@@ -55,6 +56,8 @@
 | `author` | `keyword` | автор документа (метаданные Tika, если есть) |
 | `documentTitle` | `text` | заголовок документа (метаданные Tika, если есть) |
 | `documentCreatedAt` | `date`, nullable | дата создания документа (метаданные Tika, если есть) |
+| `tags` | `keyword[]` | все активные метки файла (ручные + принятые AI-предложения) — по этому полю фильтрует поиск |
+| `aiTags` | `keyword[]` | подмножество `tags`, пришедшее из AI-генерации (§4.12) — держится отдельно только чтобы фронтенд мог показать бейдж «AI» у метки уже после того, как она влилась в общий список |
 
 ## 4. Backend — Spring Boot
 
@@ -69,10 +72,10 @@
 
 ### 4.2 Поиск
 
-`GET /api/search?q=&extension=&path=&from=&to=&page=&size=`
+`GET /api/search?q=&extension=&tag=&path=&from=&to=&page=&size=`
 
 - `multi_match` по `fileName^3` и `content`, `fuzziness=AUTO`.
-- Фильтры: `extension` (terms), `path` (префикс по `directory`), диапазон `modifiedAt`.
+- Фильтры: `extension` (terms — любое из выбранных, OR), `tag` (повторяемый параметр — каждая метка своим `term`-фильтром, AND: выбор нескольких меток сужает до файлов, у которых есть **все** они, а не любая — иначе стек из тег-чипов почти не сужал бы результат на файле с десятком меток), `path` (префикс по `directory`), диапазон `modifiedAt`.
 - Подсветка (`highlight`) по `content` не отдаётся клиенту как сырой HTML — ES оборачивает совпадения в `<em>`, но НЕ экранирует остальной текст фрагмента, поэтому файл с содержимым `<script>` мог бы инъецировать HTML в браузер. Вместо этого бэкенд разбивает фрагмент по маркерам подсветки и возвращает `List<HighlightFragment>{text, matched}` — фронтенд рендерит каждый фрагмент как экранированный текст, оборачивая совпавшие в `<mark>`, без `dangerouslySetInnerHTML`.
 - Ответ: `total`, `page`, `results[]` (`id`, `path`, `fileName`, `extension`, `sizeBytes`, `modifiedAt`, `highlights[]`, `downloadUrl`).
 - Дебаунс запроса — на фронтенде (~250-300мс на каждое нажатие клавиши), сам эндпоинт достаточно дешёвый.
@@ -89,13 +92,16 @@ app.indexing.max-file-size-mb: 50
 app.indexing.batch-size: 200
 app.indexing.watch-debounce-ms: 500
 app.indexing.excluded-dirs: [.git, node_modules, target, build, dist, .idea]
+app.ai.api-key: ${ANTHROPIC_API_KEY:}       # пусто -> AI-генерация меток выключена
+app.ai.model: ${APP_AI_MODEL:claude-opus-5}
+app.ai.max-content-chars: 8000              # сколько символов содержимого файла уходит в промпт
 ```
 
 CORS открыт для origin фронтенда. `spring-boot-starter-actuator` → `/actuator/health` используется фронтендом как индикатор доступности ES.
 
 ### 4.5 Зависимости
 
-`spring-boot-starter-webmvc`, `spring-boot-starter-security`, `spring-boot-starter-data-elasticsearch`, `spring-boot-starter-actuator`, `spring-boot-starter-validation`, `org.apache.tika:tika-core` + `tika-parsers-standard-package`, `org.springdoc:springdoc-openapi-starter-webmvc-ui`, `lombok` (Spring Boot 4.1 / Java 21 / Gradle Kotlin DSL).
+`spring-boot-starter-webmvc`, `spring-boot-starter-security`, `spring-boot-starter-data-elasticsearch`, `spring-boot-starter-actuator`, `spring-boot-starter-validation`, `org.apache.tika:tika-core` + `tika-parsers-standard-package`, `org.springdoc:springdoc-openapi-starter-webmvc-ui`, `com.anthropic:anthropic-java` (AI-генерация меток, §4.12), `lombok` (Spring Boot 4.1 / Java 21 / Gradle Kotlin DSL).
 
 ### 4.6 Морфологический поиск и поиск по имени файла
 
@@ -135,11 +141,20 @@ CORS открыт для origin фронтенда. `spring-boot-starter-actuato
 
 `springdoc-openapi-starter-webmvc-ui` сканирует контроллеры и публикует спеку на `/v3/api-docs` (JSON) и `/v3/api-docs.yaml`, плюс Swagger UI на `/swagger-ui/index.html` — без дополнительной аннотации кода. Все три пути явно открыты в `SecurityConfig` без авторизации (демо-приложение — документация должна открываться по прямой ссылке). `/api/auth/login` и `/api/auth/logout` обрабатываются фильтрами Spring Security, а не `@Controller`-методами, поэтому springdoc их не находит сам — `OpenApiConfig` добавляет эти два пути в спеку вручную через `OpenApiCustomizer`. nginx во фронтенд-контейнере проксирует `/swagger-ui/*` и `/v3/api-docs*` на backend, как и `/api/*`/`/actuator/*`. В `docs/openapi.yaml` лежит статичный снимок спеки (не обновляется автоматически — актуальная версия всегда доступна по живым эндпоинтам).
 
+### 4.12 Метки (теги) и AI-генерация
+
+- `TagController` / `TagService` управляют полем `tags` документа (§3): `POST /api/files/{id}/tags` добавляет метку вручную (нормализация — `trim` + нижний регистр + схлопывание пробелов, `TagService.normalize`), `DELETE /api/files/{id}/tags/{tag}` удаляет, `GET /api/tags` отдаёт агрегацию `terms` по полю `tags` (все различные метки индекса с количеством документов — фронтенд использует это для чипов фильтра и автодополнения).
+- `POST /api/files/{id}/tags/generate` — генерация меток по содержимому через `AiTaggingService` (интерфейс; единственная реализация — `AnthropicTaggingService`). Сгенерированные метки **добавляются** к уже существующим (не заменяют их) и попадают одновременно в `tags` и в `aiTags` — оба списка сохраняются как `LinkedHashSet` перед записью, чтобы не плодить дубликаты при повторной генерации.
+- `AnthropicTaggingService` вызывает Claude через `com.anthropic:anthropic-java` со **structured outputs** (`outputConfig(TagSuggestions.class)`, простая Java-запись с одним полем `List<String> tags` и `@JsonPropertyDescription`) — ответ гарантированно парсится в нужную форму, без ретраев на случай, если модель обернёт JSON в лишний текст. Промпт — системный (просит 3–7 коротких меток на русском в нижнем регистре, без расширения файла и без повтора имени файла) + пользовательский (имя файла + содержимое, обрезанное до `app.ai.max-content-chars`, по умолчанию 8000 символов, чтобы не раздувать стоимость запроса). Модель по умолчанию — `claude-opus-5` (`APP_AI_MODEL`), клиент строится один раз при старте (не на каждый запрос), потому что дорогая часть — именно конструирование HTTP-клиента, а не сам факт наличия/отсутствия ключа.
+- Если `ANTHROPIC_API_KEY` не задан (`AiProperties.isEnabled() == false`), `AnthropicTaggingService` не создаёт клиент вовсе и бросает `AiUnavailableException` при любой попытке генерации — контроллер транслирует это в `503`. Ручное добавление/удаление меток и поиск по ним от наличия ключа никак не зависят.
+- Поиск по меткам — `GET /api/search?tag=...` (повторяемый параметр, §4.2): в отличие от `extension` (любое совпадение), несколько выбранных меток сужают до файлов, у которых есть **все** они — так ведут себя тег-чипы в UI, когда пользователь кликает несколько подряд.
+
 ## 5. Frontend — React + TypeScript (Vite)
 
 - **Авторизация**: `AuthProvider`/`useAuth` (React Context) на старте вызывает `GET /api/auth/me`; пока не залогинен — рендерится `LoginPage` вместо основного приложения. Все запросы `api/client.ts` идут через общий `apiFetch` с `credentials: 'include'` (сессионная кука). Авторизованный контент вынесен в отдельный компонент `AuthenticatedApp`, монтируемый только после входа — это важно: если бы поиск жил прямо в корневом `App`, его `useLiveSearch` выполнил бы (и получил 401) ещё до логина, и эта ошибка не сбросилась бы после успешного входа, так как ничего в зависимостях эффекта не менялось.
 - **Вкладка «Поиск»**: `SearchBar` реагирует на каждое нажатие клавиши, дебаунс ~250-300мс (`useDebouncedValue`); `useLiveSearch` шлёт `/api/search` по дебаунсированному значению (в т.ч. с пустой строкой — см. §4.6.1), игнорируя устаревшие ответы, если пришёл более новый запрос. Рядом — `Filters` (чекбоксы расширений, префикс пути, диапазон дат). Стартового экрана «начните вводить текст» нет: без запроса `SearchResults` сразу показывает список файлов (счётчик «Всего файлов: N»), при активном поиске — «Найдено файлов: N». Результаты — список `ResultItem`: иконка по типу файла (`utils/fileIcon.ts`), имя, путь, размер, дата изменения, подсвеченный фрагмент (рендерится из списка экранированных фрагментов, `matched` — в `<mark>`), кнопки «Просмотр» и «Скачать». Плюс `Pagination`.
-- **Предпросмотр**: `FilePreviewModal` по клику «Просмотр» запрашивает `GET /api/files/{id}` и рендерит по `contentType` — `<img>` для изображений, `<iframe>` для PDF (оба через `/preview`, inline), иначе извлечённый текст в `<pre>` (как обычный React-текст, никогда не как HTML). Сверху — метаданные (автор/заголовок/дата), если есть.
+- **Предпросмотр**: `FilePreviewModal` по клику «Просмотр» запрашивает `GET /api/files/{id}` и рендерит по `contentType` — `<img>` для изображений, `<iframe>` для PDF (оба через `/preview`, inline), иначе извлечённый текст в `<pre>` (как обычный React-текст, никогда не как HTML). Сверху — метаданные (автор/заголовок/дата), если есть, и `TagEditor` (список меток файла, ручное добавление/удаление, кнопка «✨ Сгенерировать с помощью AI»; метки, пришедшие из AI-генерации, помечены бейджем «AI» — по пересечению с `aiTags`).
+- **Фильтр по меткам**: `Filters` подгружает `GET /api/tags` при монтировании и показывает до `MAX_TAG_CHIPS` меток чипами (`#метка`, чекбокс) плюс поле для метки, которой ещё нет в списке (с `<datalist>`-автодополнением по тем же данным). Выбор нескольких чипов — AND по бэкенду (см. §4.12), не OR, как у расширений.
 - **Вкладка «Индексация»**: `IndexManager` — добавление root'а (путь внутри контейнера backend, например `/data/...`), таблица root'ов с живым статусом/прогрессом (поллинг раз в ~2с во время `SCANNING`), кнопки «Загрузить файл» (скрытый `<input type="file">` под `<label>`, POST multipart на `/api/roots/{id}/upload`), «Переиндексировать», «Удалить».
 - Индикатор доступности ES в шапке на основе `/actuator/health`, ссылка «API docs» на Swagger UI (`/swagger-ui/index.html`, открывается в новой вкладке), текущий пользователь и кнопка «Выйти».
 - Тёмная тема — единственная и безусловная (`:root` без `@media (prefers-color-scheme)`): большинство браузеров репортуют `light` по умолчанию, если у ОС явно не включена тёмная тема, поэтому условный светлый override почти всегда «побеждал» бы и делал тёмную тему не работающей на практике по умолчанию.
@@ -148,7 +163,7 @@ CORS открыт для origin фронтенда. `spring-boot-starter-actuato
 ## 6. Docker Compose
 
 - `elasticsearch` — single-node 9.x, `xpack.security.enabled=false` (упрощение для dev), named volume для данных, healthcheck.
-- `backend` — сборка из `backend/Dockerfile` (multi-stage Gradle → JRE 21, контейнер работает от root — см. ниже), `depends_on: elasticsearch (healthy)`, монтирует `${INDEX_ROOT:-./sample-data}:/data` (на запись — загрузка файлов через UI пишет прямо в этот том) — пользователь может указать любую директорию хоста через переменную окружения, `SPRING_ELASTICSEARCH_URIS=http://elasticsearch:9200`, публикуется на хост-порт `${BACKEND_PORT:-7007}`.
+- `backend` — сборка из `backend/Dockerfile` (multi-stage Gradle → JRE 21, контейнер работает от root — см. ниже), `depends_on: elasticsearch (healthy)`, монтирует `${INDEX_ROOT:-./sample-data}:/data` (на запись — загрузка файлов через UI пишет прямо в этот том) — пользователь может указать любую директорию хоста через переменную окружения, `SPRING_ELASTICSEARCH_URIS=http://elasticsearch:9200`, `ANTHROPIC_API_KEY` (опционально — без него AI-генерация меток выключена, см. §4.12), публикуется на хост-порт `${BACKEND_PORT:-7007}`.
 - `frontend` — сборка из `frontend/Dockerfile` (multi-stage Vite build → nginx), nginx проксирует `/api/*`, `/actuator/*`, `/swagger-ui/*` и `/v3/api-docs*` на `backend:8080`, публикуется на хост-порт `${FRONTEND_PORT:-7006}`.
 - `sample-data/` — демонстрационные файлы всех поддерживаемых форматов (txt/md/csv/pdf/docx/xlsx/pptx) на русском, чтобы `docker compose up` сразу давало что индексировать и было видно работу метаданных/предпросмотра/морфологии на разных типах файлов.
 
@@ -159,8 +174,8 @@ CORS открыт для origin фронтенда. `spring-boot-starter-actuato
 Покрытие: `jacoco` Gradle-плагин (backend, `./gradlew test jacocoTestReport`) и `@vitest/coverage-v8` (frontend, `npm run test:coverage`) — снимок текущих цифр в README.
 
 **Backend (JUnit 5):**
-- Юнит-тесты: `TextExtractionService` (текст и метаданные из фикстур .txt/.pdf/.docx — DOCX-фикстура с автором/заголовком генерируется в тесте через Apache POI `XWPFDocument`, транзитивная зависимость `tika-parsers-standard-package`, без чек-ина бинарника; корректная обработка «битого» файла без исключения), `SearchService` (построение запроса/фильтров, разбиение фрагментов подсветки — включая XSS-кейс с `<script>` в содержимом).
-- `@WebMvcTest` для контроллеров: `IndexControllerTest`, `SearchControllerTest`, `FileControllerTest` импортируют реальный `SecurityConfig` (не только `@WithMockUser`) — иначе дефолтная security-автоконфигурация Boot включает CSRF и валит все POST/DELETE независимо от `@WithMockUser`. `AuthControllerTest` — цепочка логин → `/me` с реальной сессией (`MockHttpSession`), неверные креды, логаут. Загрузка: путь с `../` санитизируется, 404 для неизвестного root'а. `GET /api/files/{id}` — форма ответа, флаг `truncated`.
+- Юнит-тесты: `TextExtractionService` (текст и метаданные из фикстур .txt/.pdf/.docx — DOCX-фикстура с автором/заголовком генерируется в тесте через Apache POI `XWPFDocument`, транзитивная зависимость `tika-parsers-standard-package`, без чек-ина бинарника; корректная обработка «битого» файла без исключения), `SearchService` (построение запроса/фильтров, разбиение фрагментов подсветки — включая XSS-кейс с `<script>` в содержимом), `TagServiceTest` (нормализация, слияние ручных/AI-меток без дублей при повторной генерации, `listTags`-агрегация), `AnthropicTaggingServiceTest` (structured-outputs парсинг, обрезка контента по `max-content-chars`, `AiUnavailableException` при отсутствии ключа и при ошибке SDK).
+- `@WebMvcTest` для контроллеров: `IndexControllerTest`, `SearchControllerTest`, `FileControllerTest`, `TagControllerTest` импортируют реальный `SecurityConfig` (не только `@WithMockUser`) — иначе дефолтная security-автоконфигурация Boot включает CSRF и валит все POST/DELETE независимо от `@WithMockUser`. `AuthControllerTest` — цепочка логин → `/me` с реальной сессией (`MockHttpSession`), неверные креды, логаут. Загрузка: путь с `../` санитизируется, 404 для неизвестного root'а. `GET /api/files/{id}` — форма ответа, флаг `truncated`.
 - Интеграционный тест на Testcontainers (реальный Elasticsearch, один инстанс на класс — старт ES занимает ~20-80с, поэтому новые сценарии дописаны как доп. `@Test`-методы, а не отдельные классы): логин с проксированием cookie на все последующие вызовы (`TestRestTemplate.exchange` с заголовком `Cookie`, а не удобные методы вроде `getForObject`, которые не принимают заголовки); регистрация root'а → сканирование → `/api/search` → watcher подхватывает изменение/удаление файла (bounded poll, не `Thread.sleep`) → `/api/files/{id}/download`; поиск словоформы через `russian`-анализатор; загрузка через multipart indexируется watcher'ом без явного reindex. Русский текст в query передаётся как URI template variable (`"/api/search?q={q}"` + `query` как vararg), а не через ручной `URLEncoder.encode` — иначе `RestTemplate` кодирует уже закодированную строку повторно, и кириллица на сервере превращается в мусор.
 
 **Frontend (Vitest + React Testing Library):**
@@ -170,6 +185,7 @@ CORS открыт для origin фронтенда. `spring-boot-starter-actuato
 - `FilePreviewModal` — ветки по `contentType` (изображение/PDF/текст), метаданные, флаг `truncated`, XSS-safety-кейс, закрытие по клику на оверлей — всё через `msw`.
 - `useAuth`/`LoginPage` — сессия по `/me` при монтировании, успешный/неуспешный логин, логаут — через `msw`.
 - `IndexManager` — добавление/удаление/загрузка файла (для upload тест проверяет только факт запроса на нужный `/api/roots/{id}/upload`, а не парсинг multipart-тела — `request.formData()` в связке jsdom+undici+msw в этой версии ненадёжен; реальный парсинг multipart уже покрыт backend-интеграционным тестом).
+- `TagEditor` — добавление/удаление метки, генерация через AI (успех и ошибка — 503 при отсутствии ключа рендерится как обычное сообщение об ошибке, а не падение UI), бейдж «AI» только у меток из `aiTags`.
 - `fileIcon` — таблица соответствий расширение → иконка.
 - API-клиент — тесты через `msw` (мок сети без реального сервера).
 
@@ -195,3 +211,4 @@ CORS открыт для origin фронтенда. `spring-boot-starter-actuato
 - `GET /api/files/{id}` для DOCX/PDF-фикстуры → присутствуют `author`/`title`/`documentCreatedAt`.
 - Изменение/добавление файла в смонтированной директории (в т.ч. загрузка через UI) → `GET /api/roots` показывает обновлённый `docCount` без ручной переиндексации.
 - Открыть `http://localhost:7006` — экран входа по умолчанию; после логина: тёмная тема без переключателя, ввод в поиск обновляет результаты по мере набора текста с иконками по типу файла и счётчиком найденного, подсветка рендерится безопасно (без сырого HTML), кнопка «Просмотр» открывает модалку с метаданными и текстом/PDF/изображением, «Скачать» работает, вкладка «Управление индексом» позволяет загрузить файл через UI и увидеть обновлённый `docCount`.
+- Без `ANTHROPIC_API_KEY`: `POST /api/files/{id}/tags/generate` → 503, ручное `POST /api/files/{id}/tags` всё равно работает; с ключом — генерация возвращает 3–7 меток, помеченных `aiTags`, и они появляются чипами в фильтре поиска (`GET /api/tags`), причём выбор нескольких меток сужает результат по AND.

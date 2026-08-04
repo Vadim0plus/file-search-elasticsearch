@@ -81,6 +81,62 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/IndexRootDto"
+  /api/files/{id}/tags:
+    post:
+      tags:
+      - tag-controller
+      operationId: addTag
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddTagRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TagsDto"
+  /api/files/{id}/tags/generate:
+    post:
+      tags:
+      - tag-controller
+      operationId: generateTags
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TagsDto"
+  /api/tags:
+    get:
+      tags:
+      - tag-controller
+      operationId: listTags
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TagCountDto"
   /api/search:
     get:
       tags:
@@ -93,6 +149,13 @@ paths:
         schema:
           type: string
       - name: extension
+        in: query
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: tag
         in: query
         required: false
         schema:
@@ -238,6 +301,29 @@ paths:
                 type: object
                 additionalProperties:
                   type: string
+  /api/files/{id}/tags/{tag}:
+    delete:
+      tags:
+      - tag-controller
+      operationId: removeTag
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tag
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TagsDto"
   /api/auth/login:
     post:
       summary: Войти
@@ -291,6 +377,31 @@ components:
         createdAt:
           type: string
           format: date-time
+    AddTagRequest:
+      type: object
+      properties:
+        tag:
+          type: string
+          minLength: 1
+    TagsDto:
+      type: object
+      properties:
+        tags:
+          type: array
+          items:
+            type: string
+        aiTags:
+          type: array
+          items:
+            type: string
+    TagCountDto:
+      type: object
+      properties:
+        tag:
+          type: string
+        count:
+          type: integer
+          format: int64
     HighlightFragmentDto:
       type: object
       properties:
@@ -323,6 +434,10 @@ components:
               $ref: "#/components/schemas/HighlightFragmentDto"
         downloadUrl:
           type: string
+        tags:
+          type: array
+          items:
+            type: string
     SearchResponseDto:
       type: object
       properties:
@@ -369,3 +484,11 @@ components:
           type: string
         truncated:
           type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+        aiTags:
+          type: array
+          items:
+            type: string
